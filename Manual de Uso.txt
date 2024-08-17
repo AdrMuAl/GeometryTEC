@@ -1,0 +1,47 @@
+>>> Setup para el emulador(DOSBOX) y compilacion de ensamblador 8086 de 16 bits
+    1. Instalar DOSBOX mediante el url adjunto en el README,
+       o instalar via consola de comandos:
+        - (Ubuntu): sudo apt-get install dosbox
+        - (Windows): -
+
+    2. Descomprimir 8086.zip, adjunto en este repositorio, o 
+       descargarlo por medio del url en el README en caso de no tenerlo.
+
+    3. Abrir el emulador desde la terminal:
+        - (Ubuntu): dosbox
+        - (Windows): -
+
+    4. Montar un disco fisico (C:) del dispositivo como disco virtual 
+       para el emulador. Esto permite que el emulador acceda a un directorio.
+       Esto se logra usando el comando:
+        - (Dosbox): mount C ~/path/to/workdir
+        * En nuestro caso el directorio es el de este repositorio.
+
+    5. Activar el disco montado:
+        - (Dosbox): C:
+    
+    << Apartir de aqui es el procedimiento de compilacion y ejecucion >>
+    6. Para compilar algun codigo .asm se debe navegar hasta la carpeta 8086:
+        - (Dosbox): cd ./src/include/8086
+    
+    7. Dentro de '8086', podemos hacer uso de TASM o MASM para compilar nuestro codigo:
+        - (Dosbox): tasm .\path\to\file.asm
+    
+    8. Linkear los binarios:
+        - (Dosbox): tlink .\path\to\file
+    * note que el archivo compilado se llama 'file' (sin la extension .asm)
+
+
+* El codigo fuente puede ser editado desde cualquier editor de texto o IDE, el emulador solo nos permite poder compilar
+y ejecutar el programa usando arquitectura de 16 bits *
+
+>>> Ejecutar programa desde el emulador
+    1. Ejecutar el programa compilado y linkeado:
+        - (Dosbox): file.exe
+    * desde la carpeta 8086, que es donde se guardaran los ejecutables 
+
+    2. Ejecutar el programa con el debugger:
+        - (Dosbox): td file.exe
+
+    3. Salir del emulador:
+        - (Dosbox): exit
