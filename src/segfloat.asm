@@ -4,13 +4,13 @@
 .MODEL SMALL
 .STACK 100H
 .data   ; Seccion de inicializacion de datos (variables)
-    sit db 0    ; Esta 'variable' en memoria almacena la operacion a evaluar
+    sit db 1    ; Esta 'variable' en memoria almacena la operacion a evaluar
 
     num dw 13 ; variable (16 bits) word para la parte entera de un valor
     dnum dw 79   ; variable (16 bits) 2 bytes de la parte flotante de 'num'
 
-    arg dw 1    ; variable (16 bits) word para la parte entera del argumento de la operacion
-    darg dw 6   ; variable (16 bits) 2 bytes para la parte flotante de 'arg'
+    operand2 dw 31    ; variable (16 bits) word para la parte entera del argumento de la operacion
+    doperand2 dw 60   ; variable (16 bits) 2 bytes para la parte flotante de 'arg'
 
     solv dw ?   ; variable (16 bits) word para la parte entera del resultado de la operacion
     dsolv dw ?  ; variable (16 bits) 2 bytes para la parte flotante de 'solv'
@@ -71,15 +71,72 @@
         jmp EXIT
     ; -----------------------------|'add()'|-----------------------------
     addition:
+        ; 1. (Efectuar suma de las partes enteras)
+        mov ax, num
+        add ax, operand2
+        mov solv, ax
+            ; (Limpieza de registros)
+            mov ax, 0
+        ; 2. (Efectuar suma de las partes flotantes) 
+        mov ax, dnum    ; AX = flotante1
+        add ax, doperand2    ; flotante1(AX) = flotante1 + flotante2
+        ; (a)[Verificar digitos del flotante]
+        mov bl, 100
+        div bl
+
+        mov cx, 0
+        mov cl, al  ; CX = [CH=0], [CL=AL](cociente)
+
+        mov dx, 0
+        mov dl, ah  ; DX = [DH=0], [DL=AH](residuo)
+
+        cmp cx, 0
+            jz skipfix
+        add solv, cx    ; solv = solv(pt entera) + residuo(digitos extra)
+
+        skipfix:
+        mov dsolv, dx
+        ; (b)[Limpieza de registros]
+            mov ax, 0
+            mov bx, 0
+            mov cx, 0
+            mov dx, 0
+        ; mov ax, num
+        ; mov solv, ax
+        ; mov ax,0 
+        ; mov ax, dnum
+        ; mov dsolv, ax
+        ; mov ax,0 
         ret
     ; -----------------------------|'subs()'|-----------------------------
     substract:
+        ; 1. (Efectuar suma de las partes enteras)
+
+        ; 2. (Efectuar suma de las partes flotantes) 
         ret
     ; -----------------------------|'div()'|-----------------------------
     divide:
+        ; 1. (Efectuar division de las partes enteras)
+          ; 1.1 [Dividir: entero entre entero]
+        
+          ; 1.2 [Multplicar: entero entre flotante]
+
+        ; 2. (Efectuar divison de las partes flotantes) 
+          ; 2.1 [Dividir: flotante entre entero]
+        
+          ; 2.2 [Multplicar: flotante entre flotante]
         ret
     ; -----------------------------|'mult()'|-----------------------------
     multiply:
+        ; 1. (Efectuar multiplicacion de las partes enteras)
+          ; 1.1 [Multiplicar: entero entre entero]
+        
+          ; 1.2 [Dividir: entero entre flotante]
+          
+        ; 2. (Efectuar multiplicacion de las partes flotantes) 
+          ; 2.1 [Dividir: flotante entre entero]
+                  ; 2.2 [Multplicar: flotante entre flotante]
+
         ret
     ; --------------------------------|carryhandler()|--------------------------------
     carryHandler:
