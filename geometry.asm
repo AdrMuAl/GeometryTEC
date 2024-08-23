@@ -27,8 +27,9 @@
     inputBuffer DB 20 DUP('$')   ; Buffer para almacenar la entrada del usuario
     resultBuffer DB 6 DUP(0)     ; Buffer para almacenar el resultado como cadena (5 dígitos + null)
     floatValue DW 0              ; Para almacenar el valor convertido a punto flotante
-    area DW 0                    ; Variable para el área
-    perimeter DW 0               ; Variable para el perímetro
+    area DW 0    
+    perimeter DW 0                   ; Variable para el área
+    Perimetera DW 0               ; Variable para el perímetro
 
 .CODE
 START:
@@ -135,23 +136,37 @@ CALC_CUADRADO:
     XOR AX, AX                ; Limpia AX
 
 CONVERT_INPUT:
-    MOV AL, [DI]              ; Toma el siguiente carácter
-    CMP AL, '$'               ; Verifica si es el final de la cadena
-    JE CONVERT_DONE           ; Salta si es el final
-    SUB AL, '0'               ; Convierte el carácter en un número
-    JMP CONVERT_DONE         ; Repite
-
+    MOV AL, [DI]
+    CMP AL, '$'              ; Verifica si es el terminador '$'
+    JE CONVERT_DONE          ; Salta si encuentra el terminador '$'
+    
+    CMP AL, '0'              ; Verifica si el carácter es un dígito
+    JB CONVERT_DONE          ; Si es menor que '0', termina
+    CMP AL, '9'              ; Verifica si es mayor que '9'
+    JA CONVERT_DONE          ; Si es mayor que '9', termina
+    SHL CX, 4                ; Multiplica CX por 16 
+    SUB AL, '0'              ; Convierte el carácter a su valor numérico
+    MOV AH, 0d                ; Limpia AH
+    ADD CX, AX               ; Suma el valor convertido a CX
+    
+    
+    
+    INC DI                   ; Mueve al siguiente carácter
+    JMP CONVERT_INPUT        ; Repite para el siguiente dígito
 CONVERT_DONE:
+    XOR AX, AX                ; Limpia AX
+
+    MOV AX, CX                ; Almacena el resultado final en AX
     MOV floatValue, AX        ; Almacena el valor del lado
 
     ; Ahora, realiza el cálculo del área y perímetro
     MOV AX, floatValue        ; AX = lado
-    IMUL AX                   ; AX = lado * lado
+    MUL AX                   ; AX = lado * lado
     MOV area, AX              ; Almacena el área
     MOV AX, floatValue        ; Recupera el valor original
     ADD AX, AX                ; AX = 2 * lado
     ADD AX, AX                ; AX = 4 * lado
-    MOV perimeter, AX         ; Almacena el perímetro
+    MOV Perimetera, AX         ; Almacena el perímetro
     JMP DISPLAY_RESULTS       ; Muestra los resultados
 
 
@@ -186,17 +201,32 @@ CALC_TRIANGULO:
     MOV AH, 09H
     INT 21H
 
+    ; Espera el ingreso del usuario
     CALL WAIT_FOR_ENTER
 
-    ; Conversión y cálculo del área y perímetro para triángulo
-    MOV AX, floatValue  ; AX = lado
-    IMUL AX             ; AX = AX * AX (lado * lado)
-    MOV area, AX
-    MOV AX, floatValue
+
+    LEA DI, inputBuffer + 2   ; +2 para omitir la longitud de la cadena en inputBuffer
+    XOR CX, CX                ; Reinicia el contador de dígitos
+    XOR AX, AX                ; Limpia AX
+CONVERT_INPUT2:
+    MOV AL, [DI]              ; Toma el siguiente carácter
+    CMP AL, '$'               ; Verifica si es el final de la cadena
+    JE CONVERT_DONE2           ; Salta si es el final
+    SUB AL, '0'               ; Convierte el carácter en un número
+    JMP CONVERT_DONE2         ; Repite
+
+CONVERT_DONE2:
+    MOV floatValue, AX        ; Almacena el valor del lado
+
+    ; Ahora, realiza el cálculo del área y perímetro
+    MOV AX, floatValue        ; AX = lado
+    IMUL AX                   ; AX = lado * lado
+    MOV area, AX              ; Almacena el área
+    MOV AX, floatValue        ; Recupera el valor original
     ADD AX, AX          ; AX = 2 * lado
     ADD AX, floatValue  ; AX = 3 * lado
     MOV perimeter, AX
-    JMP DISPLAY_RESULTS
+    JMP DISPLAY_RESULTS 
 
 ; Cálculo para Rombo
 CALC_ROMBO:
@@ -342,7 +372,7 @@ DISPLAY_RESULTS:
     MOV AH, 09H
     INT 21H
 
-    MOV AX, perimeter      ; AX contiene el perímetro
+    MOV AX, Perimetera      ; AX contiene el perímetro
     CALL NUM_TO_STRING     ; Convierte AX en una cadena de texto en resultBuffer
     LEA DX, resultBuffer   ; Apunta DX al buffer de resultado
     MOV AH, 09H
@@ -360,14 +390,13 @@ WAIT_FOR_ENTER ENDP
 
 ; Rutina para convertir número en AX a cadena de texto en resultBuffer
 NUM_TO_STRING PROC
-    MOV BX, 10             ; Divisor para extraer cada dígito
+    MOV BX, 10             ; Divisor para extraer cada dígito decimal
     XOR CX, CX             ; Reinicia el contador de dígitos
-    MOV DI, OFFSET resultBuffer + 5 ; Apunta al final del buffer
+    MOV DI, OFFSET resultBuffer + 5 ; Apunta al final del buffer (DI = 5)
 
-    ; Rutina para extraer cada dígito
 CONVERT_LOOP:
-    XOR DX, DX             ; Limpia DX
-    DIV BX                 ; Divide AX por 10, DX contiene el resto (dígito actual)
+    XOR DX, DX             ; Limpia DX para la división
+    DIV BX                 ; AX / BX -> Cociente en AX, resto en DX
     ADD DL, '0'            ; Convierte el dígito a su representación ASCII
     DEC DI                 ; Retrocede una posición en el buffer
     MOV [DI], DL           ; Almacena el dígito en el buffer
@@ -375,24 +404,30 @@ CONVERT_LOOP:
     CMP AX, 0
     JNZ CONVERT_LOOP       ; Repite mientras AX no sea 0
 
-    ; Ajusta el puntero DI para apuntar al primer dígito en el buffer
+    ; Mueve los dígitos reales al principio del buffer
     LEA SI, resultBuffer + 5
     SUB SI, CX
     MOV DI, OFFSET resultBuffer
-    MOV CX, 5
 
-    ; Llena con espacios si es necesario
+    ; Calcula el número de espacios a llenar
+    MOV BX, 5
+    SUB BX, CX
+    MOV CX, BX             ; Llena con espacios las posiciones restantes
+
     MOV AL, ' '
-    REP STOSB
+    REP STOSB              ; Llena con espacios
 
-    ; Copia los dígitos reales al principio del buffer
+    ; Ajusta CX para copiar los dígitos correctos
     MOV CX, 5
-    REP MOVSB
+    SUB CX, BX
+    REP MOVSB              ; Copia los dígitos reales
 
-    ; Termina con null (opcional)
-    MOV BYTE PTR [DI], '$' ; Finaliza la cadena
+    ; Finaliza la cadena con un '$'
+    MOV BYTE PTR [DI], '$'
     RET
 NUM_TO_STRING ENDP
+
+
 
 END START
 
