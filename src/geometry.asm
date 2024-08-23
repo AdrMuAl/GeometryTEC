@@ -26,7 +26,6 @@
     promptBaseMajor DB 0Dh, 0Ah, 'Por favor ingrese el tamano de la base mayor: $'
     msgArea DB 0Dh, 0Ah, 'El area es: $'
     msgPerimeter DB 0Dh, 0Ah, 'El perimetro es: $'
-    inputBuffer DB 6 DUP('$')   ; Buffer para almacenar la entrada del usuario (máx 5 dígitos + null)
     intValue DW 0              ; Para almacenar el valor convertido a entero
     area DW 0                  ; Variable para el área
     perimeter DW 0             ; Variable para el perímetro
@@ -128,10 +127,8 @@ CALC_CUADRADO:
     INT 21H
 
     ; Espera el ingreso del usuario
-    CALL WAIT_FOR_ENTER
+    CALL READ_NUMBER_NEW
 
-    ; Convertir la entrada a número entero
-    CALL CONVERT_INT_INPUT
     MOV AX, intValue        ; AX = lado
     MUL AX                  ; AX = lado * lado
     MOV area, AX            ; Almacena el área
@@ -147,8 +144,7 @@ CALC_RECTANGULO:
     MOV AH, 09H
     INT 21H
 
-    CALL WAIT_FOR_ENTER
-    CALL CONVERT_INT_INPUT
+    CALL READ_NUMBER_NEW
     MOV AX, intValue  ; AX = base
     MOV BX, AX        ; BX = base
 
@@ -156,8 +152,7 @@ CALC_RECTANGULO:
     MOV AH, 09H
     INT 21H
 
-    CALL WAIT_FOR_ENTER
-    CALL CONVERT_INT_INPUT
+    CALL READ_NUMBER_NEW
     MOV CX, intValue  ; CX = altura
 
     ; Calcular área y perímetro
@@ -168,21 +163,24 @@ CALC_RECTANGULO:
     MOV perimeter, BX  ; Almacena el perímetro
     JMP DISPLAY_RESULTS
 
+; Rutinas para las otras figuras geométricas:
+; Se implementan de forma similar a las anteriores,
+; con la lógica específica para cada figura.
+
 ; Cálculo para Triángulo Equilátero
 CALC_TRIANGULO:
     LEA DX, promptSize1
     MOV AH, 09H
     INT 21H
 
-    CALL WAIT_FOR_ENTER
-    CALL CONVERT_INT_INPUT
+    CALL READ_NUMBER_NEW
     MOV AX, intValue  ; AX = lado
     MOV BX, AX        ; BX = lado
     MUL BX            ; AX = lado * lado
     MOV area, AX      ; Almacena el área
     MOV AX, intValue
-    ADD AX, AX        ; AX = 2 * lado
-    ADD AX, BX        ; AX = 3 * lado
+    MOV CX, 3
+    MUL CX              ; AX = lado * 3
     MOV perimeter, AX ; Almacena el perímetro
     JMP DISPLAY_RESULTS
 
@@ -192,14 +190,14 @@ CALC_ROMBO:
     MOV AH, 09H
     INT 21H
 
-    CALL WAIT_FOR_ENTER
-    CALL CONVERT_INT_INPUT
+    CALL READ_NUMBER_NEW
     MOV AX, intValue  ; AX = lado
     MOV BX, AX        ; BX = lado
     MUL BX            ; AX = lado * lado
     MOV area, AX      ; Almacena el área
-    ADD AX, BX        ; AX = 2 * lado
-    ADD AX, BX        ; AX = 4 * lado
+    MOV AX, intValue
+    MOV CX, 4
+    MUL CX              ; AX = lado * 4
     MOV perimeter, AX ; Almacena el perímetro
     JMP DISPLAY_RESULTS
 
@@ -209,8 +207,7 @@ CALC_PENTAGONO:
     MOV AH, 09H
     INT 21H
 
-    CALL WAIT_FOR_ENTER
-    CALL CONVERT_INT_INPUT
+    CALL READ_NUMBER_NEW
     MOV AX, intValue  ; AX = lado
     MOV BX, AX        ; BX = lado
     MUL BX            ; AX = lado * lado
@@ -227,8 +224,7 @@ CALC_HEXAGONO:
     MOV AH, 09H
     INT 21H
 
-    CALL WAIT_FOR_ENTER
-    CALL CONVERT_INT_INPUT
+    CALL READ_NUMBER_NEW
     MOV AX, intValue  ; AX = lado
     MOV BX, AX        ; BX = lado
     MUL BX            ; AX = lado * lado
@@ -245,16 +241,16 @@ CALC_CIRCULO:
     MOV AH, 09H
     INT 21H
 
-    CALL WAIT_FOR_ENTER
-    CALL CONVERT_INT_INPUT
+    CALL READ_NUMBER_NEW
     MOV AX, intValue  ; AX = radio
     MOV BX, AX        ; BX = radio
     MUL BX            ; AX = radio * radio
     MOV area, AX      ; Almacena el área
     MOV AX, intValue
-    ADD AX, AX        ; Simplificando la multiplicación por 2 * PI (usando PI ≈ 3.14)
-    ADD AX, AX
-    MOV perimeter, AX   ; Almacena el perímetro
+    MOV CX, 2
+    MUL CX            ; AX = 2 * radio
+    ADD AX, AX        ; AX = 4 * radio (Simplificando la multiplicación por π ≈ 3.14)
+    MOV perimeter, AX ; Almacena el perímetro
     JMP DISPLAY_RESULTS
 
 ; Cálculo para Trapecio
@@ -263,34 +259,31 @@ CALC_TRAPECIO:
     MOV AH, 09H
     INT 21H
 
-    CALL WAIT_FOR_ENTER
-    CALL CONVERT_INT_INPUT
+    CALL READ_NUMBER_NEW
     MOV AX, intValue  ; AX = base mayor
-    MOV BX, AX          ; BX = base mayor
+    MOV BX, AX        ; BX = base mayor
 
     LEA DX, promptBaseMinor
     MOV AH, 09H
     INT 21H
 
-    CALL WAIT_FOR_ENTER
-    CALL CONVERT_INT_INPUT
+    CALL READ_NUMBER_NEW
     MOV CX, intValue  ; CX = base menor
 
-    ADD BX, CX          ; BX = base mayor + base menor
+    ADD BX, CX        ; BX = base mayor + base menor
 
     LEA DX, promptSize3
     MOV AH, 09H
     INT 21H
 
-    CALL WAIT_FOR_ENTER
-    CALL CONVERT_INT_INPUT
+    CALL READ_NUMBER_NEW
     MOV CX, intValue  ; CX = altura
 
-    ; Calcular área y perímetro
-    MUL CX             ; AX = (base mayor + base menor) * altura
-    MOV area, AX       ; Almacena el área
-    ADD BX, BX         ; Doble la suma de las bases
-    MOV perimeter, BX  ; Almacena el perímetro
+    ; Calcular área
+    MUL CX            ; AX = (base mayor + base menor) * altura
+    MOV area, AX      ; Almacena el área
+    ADD BX, BX        ; Doble la suma de las bases
+    MOV perimeter, BX ; Almacena el perímetro
     JMP DISPLAY_RESULTS
 
 ; Cálculo para Paralelogramo
@@ -299,17 +292,15 @@ CALC_PARALELOGRAMO:
     MOV AH, 09H
     INT 21H
 
-    CALL WAIT_FOR_ENTER
-    CALL CONVERT_INT_INPUT
+    CALL READ_NUMBER_NEW
     MOV AX, intValue  ; AX = base
-    MOV BX, AX          ; BX = base
+    MOV BX, AX        ; BX = base
 
     LEA DX, promptSize3
     MOV AH, 09H
     INT 21H
 
-    CALL WAIT_FOR_ENTER
-    CALL CONVERT_INT_INPUT
+    CALL READ_NUMBER_NEW
     MOV CX, intValue  ; CX = altura
 
     ; Calcular área y perímetro
@@ -362,60 +353,49 @@ EXIT:
     MOV AH, 4CH
     INT 21H
 
-; Rutina para esperar la tecla Enter
-WAIT_FOR_ENTER PROC
-    MOV AH, 0AH
-    LEA DX, inputBuffer
+; Nueva Rutina para leer un número entero del usuario
+READ_NUMBER_NEW PROC
+    XOR AX, AX         ; Limpia el registro AX
+    XOR BX, BX         ; Limpia el registro BX
+
+READ_LOOP_NEW:
+    MOV AH, 01H        ; Llama a INT 21H para leer un carácter
     INT 21H
+    CMP AL, 0Dh        ; Verifica si se presionó Enter
+    JE END_READ_LOOP_NEW
+    SUB AL, '0'        ; Convierte el carácter leído a un número
+    MUL BX             ; AX = AX * BX (AX se mantiene en 0)
+    ADD AX, BX         ; Acumula el valor del dígito en AX
+    ADD BX, AX         ; Multiplica el valor en BX por 10 para la siguiente iteración
+    JMP READ_LOOP_NEW
+
+END_READ_LOOP_NEW:
+    MOV intValue, AX   ; Almacena el valor final en intValue
     RET
-WAIT_FOR_ENTER ENDP
-
-;  para convertir la entrada a número entero en intValue
-CONVERT_INT_INPUT PROC
-    XOR AX, AX
-    XOR BX, BX
-    MOV SI, OFFSET inputBuffer
-
-    ; Procesa los dígitos
-    INT_CONVERT_LOOP:
-        MOV AL, [SI]
-        CMP AL, '$'
-        JE CONVERT_DONE
-        SUB AL, '0'
-        MOV AH, 0       ; Asegrar que AH esté limpio antes de multiplicar
-        MOV CX, 10
-        MUL CX
-        ADD BX, AX
-        INC SI
-        JMP INT_CONVERT_LOOP
-
-    CONVERT_DONE:
-        MOV intValue, BX
-        RET
-CONVERT_INT_INPUT ENDP
+READ_NUMBER_NEW ENDP
 
 ; Rutina para imprimir un número en formato decimal desde AX
 PRINT_NUMBER PROC
     MOV CX, 0           ; Contador de dígitos
     MOV BX, 10          ; Divisor
-    MOV DX, 0           ; Inicializa el resto en 0
-    MOV DI, OFFSET inputBuffer + 5 ; Apunta al final del buffer
 
     ; Recorre el número
-    PRINT_LOOP:
-        XOR DX, DX      ; Limpia DX
-        DIV BX          ; Divide AX por 10, DX tiene el resto
-        ADD DL, '0'     ; Convierte el dígito a ASCII
-        DEC DI          ; Mueve el índice en el buffer
-        MOV [DI], DL    ; Guarda el carácter en el buffer
-        INC CX          ; Incrementa el contador de dígitos
-        CMP AX, 0
-        JNZ PRINT_LOOP  ; Repite si no hemos procesado todos los dígitos
+PRINT_LOOP:
+    XOR DX, DX          ; Limpia DX
+    DIV BX              ; Divide AX por 10, DX tiene el resto
+    ADD DL, '0'         ; Convierte el dígito a ASCII
+    PUSH DX             ; Almacena el dígito en la pila
+    INC CX              ; Incrementa el contador de dígitos
+    CMP AX, 0
+    JNZ PRINT_LOOP      ; Repite si no hemos procesado todos los dígitos
 
-    ; Imprime el número resultante
-    MOV DX, DI
-    MOV AH, 09H
+    ; Imprime los dígitos en orden
+PRINT_DIGITS:
+    POP DX              ; Recupera los dígitos
+    MOV AH, 02H         ; Función para mostrar un carácter
     INT 21H
+    LOOP PRINT_DIGITS
+
     RET
 PRINT_NUMBER ENDP
 
