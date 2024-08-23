@@ -1,7 +1,6 @@
 .MODEL SMALL
 .STACK 100H
 .DATA
-    ; Definición de los mensajes que se mostrarán
     msgWelcome DB '******************************************', 0Dh, 0Ah, '$'
                DB 'Bienvenido a GeometryTec', 0Dh, 0Ah, '$'
     msgPrompt DB 0Dh, 0Ah, 'Por favor indique a que figura desea calcular su area y perimetro:', 0Dh, 0Ah, '$'
@@ -16,6 +15,9 @@
                 DB '8. Para Trapecio.', 0Dh, 0Ah
                 DB '9. Para Paralelogramo.', 0Dh, 0Ah, '$'
     msgInvalid DB 0Dh, 0Ah, 'Opcion invalida. Intente de nuevo.', 0Dh, 0Ah, '$'
+    msgContinue DB 0Dh, 0Ah, 'Por favor presione:', 0Dh, 0Ah
+                 DB '1. Para Continuar.', 0Dh, 0Ah
+                 DB '2. Para Salir.', 0Dh, 0Ah, '$'
     promptSize1 DB 0Dh, 0Ah, 'Por favor ingrese el tamano del lado: $'
     promptSize2 DB 0Dh, 0Ah, 'Por favor ingrese el tamano de la base: $'
     promptSize3 DB 0Dh, 0Ah, 'Por favor ingrese el tamano de la altura: $'
@@ -24,11 +26,10 @@
     promptBaseMajor DB 0Dh, 0Ah, 'Por favor ingrese el tamano de la base mayor: $'
     msgArea DB 0Dh, 0Ah, 'El area es: $'
     msgPerimeter DB 0Dh, 0Ah, 'El perimetro es: $'
-    inputBuffer DB 20 DUP('$')   ; Buffer para almacenar la entrada del usuario
-    resultBuffer DB 6 DUP(0)     ; Buffer para almacenar el resultado como cadena (5 dígitos + null)
-    floatValue DW 0              ; Para almacenar el valor convertido a punto flotante
-    area DW 0                    ; Variable para el área
-    perimeter DW 0               ; Variable para el perímetro
+    inputBuffer DB 6 DUP('$')   ; Buffer para almacenar la entrada del usuario (máx 5 dígitos + null)
+    intValue DW 0              ; Para almacenar el valor convertido a entero
+    area DW 0                  ; Variable para el área
+    perimeter DW 0             ; Variable para el perímetro
 
 .CODE
 START:
@@ -41,6 +42,7 @@ START:
     MOV AH, 09H
     INT 21H
 
+SELECCIONAR_FIGURA:
     ; Imprime el mensaje solicitando la figura
     LEA DX, msgPrompt
     MOV AH, 09H
@@ -117,7 +119,7 @@ INVALID_OPTION:
     LEA DX, msgInvalid
     MOV AH, 09H
     INT 21H
-    JMP START           ; Regresa al inicio para intentar de nuevo
+    JMP SELECCIONAR_FIGURA
 
 ; Cálculo para Cuadrado
 CALC_CUADRADO:
@@ -125,19 +127,19 @@ CALC_CUADRADO:
     MOV AH, 09H
     INT 21H
 
+    ; Espera el ingreso del usuario
     CALL WAIT_FOR_ENTER
 
-    ; Aquí deberías convertir la cadena a un valor numérico en 'floatValue'
-    ; Por ahora asumimos que floatValue tiene el valor correcto
-
-    ; Conversión y cálculo del área y perímetro para cuadrado
-    MOV AX, floatValue  ; AX = lado
-    IMUL AX             ; AX = AX * AX (lado * lado)
-    MOV area, AX        ; Almacena el área
-    ADD AX, AX          ; AX = 2 * lado
-    ADD AX, AX          ; AX = 4 * lado
-    MOV perimeter, AX   ; Almacena el perímetro
-    JMP DISPLAY_RESULTS
+    ; Convertir la entrada a número entero
+    CALL CONVERT_INT_INPUT
+    MOV AX, intValue        ; AX = lado
+    MUL AX                  ; AX = lado * lado
+    MOV area, AX            ; Almacena el área
+    MOV AX, intValue        ; Recupera el valor original
+    ADD AX, AX              ; AX = 2 * lado
+    ADD AX, AX              ; AX = 4 * lado
+    MOV perimeter, AX       ; Almacena el perímetro
+    JMP DISPLAY_RESULTS     ; Muestra los resultados
 
 ; Cálculo para Rectángulo
 CALC_RECTANGULO:
@@ -146,22 +148,24 @@ CALC_RECTANGULO:
     INT 21H
 
     CALL WAIT_FOR_ENTER
+    CALL CONVERT_INT_INPUT
+    MOV AX, intValue  ; AX = base
+    MOV BX, AX        ; BX = base
 
-    ; Conversión de base a número
-    MOV AX, floatValue  ; AX = base
-    MOV BX, AX          ; BX = base
     LEA DX, promptSize3
     MOV AH, 09H
     INT 21H
-    CALL WAIT_FOR_ENTER
 
-    ; Leer altura
-    MOV CX, floatValue  ; CX = altura
-    IMUL CX             ; AX = AX * CX (base * altura)
-    MOV area, AX        ; Almacena el área
-    ADD BX, CX
-    ADD BX, BX          ; BX = 2 * (base + altura)
-    MOV perimeter, BX   ; Almacena el perímetro
+    CALL WAIT_FOR_ENTER
+    CALL CONVERT_INT_INPUT
+    MOV CX, intValue  ; CX = altura
+
+    ; Calcular área y perímetro
+    MUL CX             ; AX = base * altura
+    MOV area, AX       ; Almacena el área
+    ADD BX, CX         ; BX = base + altura
+    ADD BX, BX         ; BX = 2 * (base + altura)
+    MOV perimeter, BX  ; Almacena el perímetro
     JMP DISPLAY_RESULTS
 
 ; Cálculo para Triángulo Equilátero
@@ -171,15 +175,15 @@ CALC_TRIANGULO:
     INT 21H
 
     CALL WAIT_FOR_ENTER
-
-    ; Conversión y cálculo del área y perímetro para triángulo
-    MOV AX, floatValue  ; AX = lado
-    IMUL AX             ; AX = AX * AX (lado * lado)
-    MOV area, AX
-    MOV AX, floatValue
-    ADD AX, AX          ; AX = 2 * lado
-    ADD AX, floatValue  ; AX = 3 * lado
-    MOV perimeter, AX
+    CALL CONVERT_INT_INPUT
+    MOV AX, intValue  ; AX = lado
+    MOV BX, AX        ; BX = lado
+    MUL BX            ; AX = lado * lado
+    MOV area, AX      ; Almacena el área
+    MOV AX, intValue
+    ADD AX, AX        ; AX = 2 * lado
+    ADD AX, BX        ; AX = 3 * lado
+    MOV perimeter, AX ; Almacena el perímetro
     JMP DISPLAY_RESULTS
 
 ; Cálculo para Rombo
@@ -189,14 +193,14 @@ CALC_ROMBO:
     INT 21H
 
     CALL WAIT_FOR_ENTER
-
-    ; Conversión y cálculo del área y perímetro para rombo
-    MOV AX, floatValue  ; AX = lado
-    IMUL AX             ; AX = AX * AX (lado * lado)
-    MOV area, AX
-    ADD AX, AX          ; AX = 2 * lado
-    ADD AX, AX          ; AX = 4 * lado
-    MOV perimeter, AX
+    CALL CONVERT_INT_INPUT
+    MOV AX, intValue  ; AX = lado
+    MOV BX, AX        ; BX = lado
+    MUL BX            ; AX = lado * lado
+    MOV area, AX      ; Almacena el área
+    ADD AX, BX        ; AX = 2 * lado
+    ADD AX, BX        ; AX = 4 * lado
+    MOV perimeter, AX ; Almacena el perímetro
     JMP DISPLAY_RESULTS
 
 ; Cálculo para Pentágono
@@ -206,15 +210,15 @@ CALC_PENTAGONO:
     INT 21H
 
     CALL WAIT_FOR_ENTER
-
-    ; Conversión y cálculo del área y perímetro para pentágono
-    MOV AX, floatValue  ; AX = lado
-    IMUL AX             ; AX = AX * AX (lado * lado)
-    MOV area, AX
-    MOV AX, floatValue
+    CALL CONVERT_INT_INPUT
+    MOV AX, intValue  ; AX = lado
+    MOV BX, AX        ; BX = lado
+    MUL BX            ; AX = lado * lado
+    MOV area, AX      ; Almacena el área
+    MOV AX, intValue
     MOV CX, 5
-    IMUL CX             ; AX = AX * 5 (5 * lado)
-    MOV perimeter, AX
+    MUL CX              ; AX = AX * 5 (5 * lado)
+    MOV perimeter, AX   ; Almacena el perímetro
     JMP DISPLAY_RESULTS
 
 ; Cálculo para Hexágono
@@ -224,15 +228,15 @@ CALC_HEXAGONO:
     INT 21H
 
     CALL WAIT_FOR_ENTER
-
-    ; Conversión y cálculo del área y perímetro para hexágono
-    MOV AX, floatValue  ; AX = lado
-    IMUL AX             ; AX = AX * AX (lado * lado)
-    MOV area, AX
-    MOV AX, floatValue
+    CALL CONVERT_INT_INPUT
+    MOV AX, intValue  ; AX = lado
+    MOV BX, AX        ; BX = lado
+    MUL BX            ; AX = lado * lado
+    MOV area, AX      ; Almacena el área
+    MOV AX, intValue
     MOV CX, 6
-    IMUL CX             ; AX = AX * 6 (6 * lado)
-    MOV perimeter, AX
+    MUL CX              ; AX = AX * 6 (6 * lado)
+    MOV perimeter, AX   ; Almacena el perímetro
     JMP DISPLAY_RESULTS
 
 ; Cálculo para Círculo
@@ -242,15 +246,15 @@ CALC_CIRCULO:
     INT 21H
 
     CALL WAIT_FOR_ENTER
-
-    ; Conversión y cálculo del área y perímetro para círculo
-    MOV AX, floatValue  ; AX = radio
-    IMUL AX             ; AX = AX * AX (radio * radio)
-    MOV area, AX
-    ; Asumimos PI = 3 para simplificar cálculos
-    MOV CX, 3
-    IMUL CX             ; AX = AX * 3 (3 * radio)
-    MOV perimeter, AX
+    CALL CONVERT_INT_INPUT
+    MOV AX, intValue  ; AX = radio
+    MOV BX, AX        ; BX = radio
+    MUL BX            ; AX = radio * radio
+    MOV area, AX      ; Almacena el área
+    MOV AX, intValue
+    ADD AX, AX        ; Simplificando la multiplicación por 2 * PI (usando PI ≈ 3.14)
+    ADD AX, AX
+    MOV perimeter, AX   ; Almacena el perímetro
     JMP DISPLAY_RESULTS
 
 ; Cálculo para Trapecio
@@ -260,29 +264,33 @@ CALC_TRAPECIO:
     INT 21H
 
     CALL WAIT_FOR_ENTER
-
-    MOV AX, floatValue  ; AX = base mayor
+    CALL CONVERT_INT_INPUT
+    MOV AX, intValue  ; AX = base mayor
     MOV BX, AX          ; BX = base mayor
+
     LEA DX, promptBaseMinor
     MOV AH, 09H
     INT 21H
 
     CALL WAIT_FOR_ENTER
+    CALL CONVERT_INT_INPUT
+    MOV CX, intValue  ; CX = base menor
 
-    MOV CX, floatValue  ; CX = base menor
     ADD BX, CX          ; BX = base mayor + base menor
-    MOV AX, BX          ; AX = base mayor + base menor
+
     LEA DX, promptSize3
     MOV AH, 09H
     INT 21H
 
     CALL WAIT_FOR_ENTER
+    CALL CONVERT_INT_INPUT
+    MOV CX, intValue  ; CX = altura
 
-    MOV CX, floatValue  ; CX = altura
-    IMUL CX             ; AX = AX * CX ((base mayor + base menor) * altura)
-    MOV area, AX        ; Almacena el área
-    ADD BX, BX          ; Doble la suma de las bases
-    MOV perimeter, BX
+    ; Calcular área y perímetro
+    MUL CX             ; AX = (base mayor + base menor) * altura
+    MOV area, AX       ; Almacena el área
+    ADD BX, BX         ; Doble la suma de las bases
+    MOV perimeter, BX  ; Almacena el perímetro
     JMP DISPLAY_RESULTS
 
 ; Cálculo para Paralelogramo
@@ -292,21 +300,24 @@ CALC_PARALELOGRAMO:
     INT 21H
 
     CALL WAIT_FOR_ENTER
-
-    MOV AX, floatValue  ; AX = base
+    CALL CONVERT_INT_INPUT
+    MOV AX, intValue  ; AX = base
     MOV BX, AX          ; BX = base
+
     LEA DX, promptSize3
     MOV AH, 09H
     INT 21H
 
     CALL WAIT_FOR_ENTER
+    CALL CONVERT_INT_INPUT
+    MOV CX, intValue  ; CX = altura
 
-    MOV CX, floatValue  ; CX = altura
-    IMUL CX             ; AX = AX * CX (base * altura)
-    MOV area, AX        ; Almacena el área
-    ADD BX, CX
-    ADD BX, BX          ; BX = 2 * (base + altura)
-    MOV perimeter, BX   ; Almacena el perímetro
+    ; Calcular área y perímetro
+    MUL CX             ; AX = base * altura
+    MOV area, AX       ; Almacena el área
+    ADD BX, CX         ; BX = base + altura
+    ADD BX, BX         ; BX = 2 * (base + altura)
+    MOV perimeter, BX  ; Almacena el perímetro
     JMP DISPLAY_RESULTS
 
 DISPLAY_RESULTS:
@@ -316,10 +327,7 @@ DISPLAY_RESULTS:
     INT 21H
 
     MOV AX, area           ; AX contiene el área
-    CALL NUM_TO_STRING     ; Convierte AX en una cadena de texto en resultBuffer
-    LEA DX, resultBuffer   ; Apunta DX al buffer de resultado
-    MOV AH, 09H
-    INT 21H
+    CALL PRINT_NUMBER      ; Imprime AX directamente
 
     ; Mostrar el perímetro
     LEA DX, msgPerimeter
@@ -327,12 +335,32 @@ DISPLAY_RESULTS:
     INT 21H
 
     MOV AX, perimeter      ; AX contiene el perímetro
-    CALL NUM_TO_STRING     ; Convierte AX en una cadena de texto en resultBuffer
-    LEA DX, resultBuffer   ; Apunta DX al buffer de resultado
+    CALL PRINT_NUMBER      ; Imprime AX directamente
+
+    JMP PREGUNTAR_CONTINUAR
+
+PREGUNTAR_CONTINUAR:
+    ; Pregunta al usuario si desea continuar o salir
+    LEA DX, msgContinue
     MOV AH, 09H
     INT 21H
 
-    JMP START  ; Regresa al inicio para otra operación o salida
+    MOV AH, 01H
+    INT 21H
+    SUB AL, '0'        ; Convierte el carácter leído a un número
+
+    CMP AL, 1
+    JNE NOT_CONTINUE
+    JMP SELECCIONAR_FIGURA
+
+NOT_CONTINUE:
+    CMP AL, 2
+    JNE PREGUNTAR_CONTINUAR
+
+EXIT:
+    ; Termina el programa
+    MOV AH, 4CH
+    INT 21H
 
 ; Rutina para esperar la tecla Enter
 WAIT_FOR_ENTER PROC
@@ -342,41 +370,53 @@ WAIT_FOR_ENTER PROC
     RET
 WAIT_FOR_ENTER ENDP
 
-; Rutina para convertir número en AX a cadena de texto en resultBuffer
-NUM_TO_STRING PROC
-    MOV BX, 10             ; Divisor para extraer cada dígito
-    XOR CX, CX             ; Reinicia el contador de dígitos
-    MOV DI, OFFSET resultBuffer + 5 ; Apunta al final del buffer
+;  para convertir la entrada a número entero en intValue
+CONVERT_INT_INPUT PROC
+    XOR AX, AX
+    XOR BX, BX
+    MOV SI, OFFSET inputBuffer
 
-    ; Rutina para extraer cada dígito
-CONVERT_LOOP:
-    XOR DX, DX             ; Limpia DX
-    DIV BX                 ; Divide AX por 10, DX contiene el resto (dígito actual)
-    ADD DL, '0'            ; Convierte el dígito a su representación ASCII
-    DEC DI                 ; Retrocede una posición en el buffer
-    MOV [DI], DL           ; Almacena el dígito en el buffer
-    INC CX                 ; Incrementa el contador de dígitos
-    CMP AX, 0
-    JNZ CONVERT_LOOP       ; Repite mientras AX no sea 0
+    ; Procesa los dígitos
+    INT_CONVERT_LOOP:
+        MOV AL, [SI]
+        CMP AL, '$'
+        JE CONVERT_DONE
+        SUB AL, '0'
+        MOV AH, 0       ; Asegrar que AH esté limpio antes de multiplicar
+        MOV CX, 10
+        MUL CX
+        ADD BX, AX
+        INC SI
+        JMP INT_CONVERT_LOOP
 
-    ; Ajusta el puntero DI para apuntar al primer dígito en el buffer
-    LEA SI, resultBuffer + 5
-    SUB SI, CX
-    MOV DI, OFFSET resultBuffer
-    MOV CX, 5
+    CONVERT_DONE:
+        MOV intValue, BX
+        RET
+CONVERT_INT_INPUT ENDP
 
-    ; Llena con espacios si es necesario
-    MOV AL, ' '
-    REP STOSB
+; Rutina para imprimir un número en formato decimal desde AX
+PRINT_NUMBER PROC
+    MOV CX, 0           ; Contador de dígitos
+    MOV BX, 10          ; Divisor
+    MOV DX, 0           ; Inicializa el resto en 0
+    MOV DI, OFFSET inputBuffer + 5 ; Apunta al final del buffer
 
-    ; Copia los dígitos reales al principio del buffer
-    MOV CX, 5
-    REP MOVSB
+    ; Recorre el número
+    PRINT_LOOP:
+        XOR DX, DX      ; Limpia DX
+        DIV BX          ; Divide AX por 10, DX tiene el resto
+        ADD DL, '0'     ; Convierte el dígito a ASCII
+        DEC DI          ; Mueve el índice en el buffer
+        MOV [DI], DL    ; Guarda el carácter en el buffer
+        INC CX          ; Incrementa el contador de dígitos
+        CMP AX, 0
+        JNZ PRINT_LOOP  ; Repite si no hemos procesado todos los dígitos
 
-    ; Termina con null (opcional)
-    MOV BYTE PTR [DI], '$' ; Finaliza la cadena
+    ; Imprime el número resultante
+    MOV DX, DI
+    MOV AH, 09H
+    INT 21H
     RET
-NUM_TO_STRING ENDP
+PRINT_NUMBER ENDP
 
 END START
-
