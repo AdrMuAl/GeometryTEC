@@ -4,7 +4,7 @@
 .MODEL SMALL
 .STACK 100H
 .data   ; Seccion de inicializacion de datos (variables)
-    sit db 1    ; Esta 'variable' en memoria almacena la operacion a evaluar
+    sit db 4    ; Esta 'variable' en memoria almacena la operacion a evaluar
 
     arg1 dw 4 ; variable (16 bits) word para la parte entera de un valor
     darg1 dw 26   ; variable (16 bits) 2 bytes de la parte flotante de 'num'
@@ -243,7 +243,7 @@
             xor bx, bx
             xor cx, cx
             xor dx, dx
-    ; 5. Ajuste de parte flotante y agregado a parte entera
+    ; 5. (Ajuste de parte flotante y agregado a parte entera)
         mov ax, dresult
         mov bx, 100
         div bx  ; La division permite dejar dos digitos en la parte flotante total(residuo), el cociente seria el agregado a la parte entera
@@ -261,7 +261,7 @@
             jmp mult_postfix
         mult_fix:   ; Residuo en DX y cociente en AX
             add result, ax ; Sumar cociente(agregado) a la parte entera
-            add dresult, dx; Sumar residuo a la parte flotante
+            mov dresult, dx; Sumar residuo a la parte flotante
         mult_postfix:
         ; (b)[Limpiar registros]
             xor ax, ax
@@ -271,15 +271,83 @@
         ret
     ; -----------------------------|'div()'|-----------------------------
     divide: ; [100(INT1)+FLT1]/[100(INT2)+FLT2]
-        ; 1. (Efectuar division de las partes enteras)
-          ; 1.1 [Dividir: entero entre entero]
-        
-          ; 1.2 [Multplicar: entero entre flotante]
+    ; 1. (Calculo de dividendo)
+        mov ax, arg1
+        mov bx, 100
+        mul bx
 
-        ; 2. (Efectuar divison de las partes flotantes) 
-          ; 2.1 [Dividir: flotante entre entero]
-        
-          ; 2.2 [Multplicar: flotante entre flotante]
+        add ax, darg1
+        mov result, ax
+        ; (a)[Limpiar registros]
+            xor ax, ax
+            xor bx, bx
+    ; 2. (Calculo del divisor)
+        mov ax, arg2
+        mov bx, 100
+        mul bx
+
+        add ax, darg2
+    ; 3. (Ejecutar divison)
+        xor bx, bx
+        mov bx, ax
+        xor ax, ax
+        mov ax, result
+
+        div bx
+        mov aux, bx ; Guardar el valor del divisor
+        ; (a)[Ajuste de parte entera y flotante]
+        xor bx, bx ; Limpiar el registro completo
+        cmp dx, 0
+            jnz div_case2
+        div_case1: ; Residuo en AH y cociente en AL
+            mov bl, ah ; Mover el residuo tal que BX=AH
+            xor ah, ah ; Limpiar AH para que AX = AL
+
+            mov result, ax
+            mov ax, bx
+            xor bx, bx
+
+            jmp div_FLT
+        div_case2: ; Residuo en DX y cociente en AX
+            mov result, ax
+            mov ax, dx
+            xor dx, dx
+        div_FLT: ; Este ciclo permite reducir el residuo hasta que solo tenga dos digitos
+            mov daux, ax ; Guardar un referencia al valor original del residuo
+            mov bx, 10
+
+            div_loop:
+                mul bx
+                div aux
+
+                cmp dx, 0
+                    jnz div_loopcase2
+                div_loopcase1:  ; Residuo en AH y cociente en AL
+                    xor ah , ah ; AX = AL
+                    jmp div_loopeval
+                div_loopcase2:  ; Residuo en DX y cociente en AX
+                    xor dx, dx  
+                div_loopeval:
+                mov cx , ax
+                sub cx, 10
+                    jns div_postproc ; Si el numero es positivo ( 2 digitos) entonces se termina el ciclo
+                
+                xor ax, ax
+                xor cx, cx
+
+                mov ax , bx
+                mul bx ; AX = BX * BX
+                mov bx , ax
+
+                mov ax, daux
+                jmp div_loop
+
+        div_postproc:
+        mov dresult, ax ; Movemos el nuevo flotante
+        ; (b)[Limpiar registros]
+            xor ax, ax
+            xor bx, bx
+            xor cx, cx
         ret
     ; --------------------------------|carryhandler()|--------------------------------
     carryHandler:
