@@ -4,16 +4,19 @@
 .MODEL SMALL
 .STACK 100H
 .data   ; Seccion de inicializacion de datos (variables)
-    sit db 1    ; Esta 'variable' en memoria almacena la operacion a evaluar
+    sit db 2    ; Esta 'variable' en memoria almacena la operacion a evaluar
 
-    num dw 13 ; variable (16 bits) word para la parte entera de un valor
-    dnum dw 79   ; variable (16 bits) 2 bytes de la parte flotante de 'num'
+    arg1 dw 13 ; variable (16 bits) word para la parte entera de un valor
+    darg1 dw 20   ; variable (16 bits) 2 bytes de la parte flotante de 'num'
 
-    operand2 dw 31    ; variable (16 bits) word para la parte entera del argumento de la operacion
-    doperand2 dw 60   ; variable (16 bits) 2 bytes para la parte flotante de 'arg'
+    arg2 dw 1   ; variable (16 bits) word para la parte entera del argumento de la operacion
+    darg2 dw 26   ; variable (16 bits) 2 bytes para la parte flotante de 'arg'
 
-    solv dw ?   ; variable (16 bits) word para la parte entera del resultado de la operacion
-    dsolv dw ?  ; variable (16 bits) 2 bytes para la parte flotante de 'solv'
+    solv dw 0   ; variable (16 bits) word para la parte entera del resultado de la operacion
+    dsolv dw 0  ; variable (16 bits) 2 bytes para la parte flotante de 'solv'
+
+    aux dw 0
+    daux dw 0
 
     string1 db 5 dup(30h) , '.', 2 dup('0'), '$'   ; arreglo de 9 caracteres(1 byte cada uno) para guardar el flotante
     string2 db 5 dup(30h) , '.', 2 dup('0'), '$'   ; arreglo secundario para manejar acarreo
@@ -51,14 +54,6 @@
 
             cmp sit, 4
             jz case4
-
-        mov ax, num
-        mov solv, ax
-        mov ax, 0
-
-        mov bx, dnum
-        mov dsolv, bx
-        mov bx, 0
         ; (Conversion a string)
         postOP:
             mov si, 0   ; Indice donde se comienza a escribir el numero
@@ -72,14 +67,14 @@
     ; -----------------------------|'add()'|-----------------------------
     addition:
         ; 1. (Efectuar suma de las partes enteras)
-        mov ax, num
-        add ax, operand2
+        mov ax, arg1
+        add ax, arg2
         mov solv, ax
             ; (Limpieza de registros)
             mov ax, 0
         ; 2. (Efectuar suma de las partes flotantes) 
-        mov ax, dnum    ; AX = flotante1
-        add ax, doperand2    ; flotante1(AX) = flotante1 + flotante2
+        mov ax, darg1    ; AX = flotante1
+        add ax, darg2    ; flotante1(AX) = flotante1 + flotante2
         ; (a)[Verificar digitos del flotante]
         mov bl, 100
         div bl
@@ -101,18 +96,49 @@
             mov bx, 0
             mov cx, 0
             mov dx, 0
-        ; mov ax, num
-        ; mov solv, ax
-        ; mov ax,0 
-        ; mov ax, dnum
-        ; mov dsolv, ax
-        ; mov ax,0 
         ret
     ; -----------------------------|'subs()'|-----------------------------
-    substract:
-        ; 1. (Efectuar suma de las partes enteras)
+    substract:  ; [100(INT1-INT2)+(FLT1-FLT2)]/100
+        ; 1. (Efectuar resta de las partes enteras)
+        mov ax, arg1
+        mov bx, 100
+        sub ax, arg2
+        mul bx
+        ; 2. (Efectuar resta de las partes flotantes)
+        xor bx, bx
+        mov bx, darg1
+        sub bx, darg2
+        ; 3. (Sumar ambas partes y dividir entre 100)
+        add ax, bx
+        xor bx, bx
+        mov bx, 100
+        div bx
+        ; (a)[Identifcar donde se guardo el residuo de la division(la nueva parte flotante)]
+        cmp dx, 0
+            jz sub_case2
+        ; Caso 1: Residuo en DX > DL
+        mov solv, ax
+        mov dsolv, dx
 
-        ; 2. (Efectuar suma de las partes flotantes) 
+        jmp sub_case1
+
+        sub_case2:   ; Caso 2: Residuo en AH
+        xor cx, cx
+        mov cl, al 
+
+        xor bx, bx
+        mov bl, ah
+
+        xor ax, ax
+        mov solv, cx
+        mov dsolv, bx
+        
+        sub_case1:
+        ; (b)[Limpiar registros]
+            mov ax, 0
+            mov bx, 0
+            mov cx, 0
+            mov dx, 0
         ret
     ; -----------------------------|'div()'|-----------------------------
     divide:
@@ -191,6 +217,10 @@
     printout:
         mov ah, 09h     ; mueve al AH la instruccion para mostrar en pantalla(09H) el contenido en DX
         int 21h
+        
+        mov ax, 0
+        mov dx, 0
+        mov si, 0
         ret
     ;------------------------------------------------------------------------------------------
     EXIT:   ; Fin del programa
