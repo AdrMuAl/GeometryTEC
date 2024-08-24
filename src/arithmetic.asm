@@ -4,16 +4,16 @@
 .MODEL SMALL
 .STACK 100H
 .data   ; Seccion de inicializacion de datos (variables)
-    sit db 2    ; Esta 'variable' en memoria almacena la operacion a evaluar
+    sit db 1    ; Esta 'variable' en memoria almacena la operacion a evaluar
 
-    arg1 dw 13 ; variable (16 bits) word para la parte entera de un valor
-    darg1 dw 20   ; variable (16 bits) 2 bytes de la parte flotante de 'num'
+    arg1 dw 4 ; variable (16 bits) word para la parte entera de un valor
+    darg1 dw 26   ; variable (16 bits) 2 bytes de la parte flotante de 'num'
 
-    arg2 dw 1   ; variable (16 bits) word para la parte entera del argumento de la operacion
-    darg2 dw 26   ; variable (16 bits) 2 bytes para la parte flotante de 'arg'
+    arg2 dw 2   ; variable (16 bits) word para la parte entera del argumento de la operacion
+    darg2 dw 15   ; variable (16 bits) 2 bytes para la parte flotante de 'arg'
 
-    solv dw 0   ; variable (16 bits) word para la parte entera del resultado de la operacion
-    dsolv dw 0  ; variable (16 bits) 2 bytes para la parte flotante de 'solv'
+    result dw 0   ; variable (16 bits) word para la parte entera del resultado de la operacion
+    dresult dw 0  ; variable (16 bits) 2 bytes para la parte flotante de 'solv'
 
     aux dw 0
     daux dw 0
@@ -57,22 +57,22 @@
         ; (Conversion a string)
         postOP:
             mov si, 0   ; Indice donde se comienza a escribir el numero
-            mov bx, solv ; (parse) requiere que la parte entera este en BX
-            mov ax, dsolv    ; (parse) requiere que la parte flotante este en AX
+            mov bx, result ; (parse) requiere que la parte entera este en BX
+            mov ax, dresult    ; (parse) requiere que la parte flotante este en AX
             call parse  ; Despues de parsear el registro 'SI' queda en el ultimo digito significativo
 
             lea dx, [string1+si]  ; Mueve al registro DX nuestro string, dado que el output redirecciona lo que haya en DX
             call printout   ; Esto hace 'print' en display del valor indicado
         jmp EXIT
     ; -----------------------------|'add()'|-----------------------------
-    addition:
-        ; 1. (Efectuar suma de las partes enteras)
+    addition: ; (INT1+INT2)+[(FLT1+FLT2)/100]
+    ; 1. (Efectuar suma de las partes enteras)
         mov ax, arg1
         add ax, arg2
-        mov solv, ax
+        mov result, ax
             ; (Limpieza de registros)
             mov ax, 0
-        ; 2. (Efectuar suma de las partes flotantes) 
+    ; 2. (Efectuar suma de las partes flotantes) 
         mov ax, darg1    ; AX = flotante1
         add ax, darg2    ; flotante1(AX) = flotante1 + flotante2
         ; (a)[Verificar digitos del flotante]
@@ -87,10 +87,10 @@
 
         cmp cx, 0
             jz skipfix
-        add solv, cx    ; solv = solv(pt entera) + residuo(digitos extra)
+        add result, cx    ; solv = solv(pt entera) + residuo(digitos extra)
 
         skipfix:
-        mov dsolv, dx
+        mov dresult, dx
         ; (b)[Limpieza de registros]
             mov ax, 0
             mov bx, 0
@@ -99,16 +99,16 @@
         ret
     ; -----------------------------|'subs()'|-----------------------------
     substract:  ; [100(INT1-INT2)+(FLT1-FLT2)]/100
-        ; 1. (Efectuar resta de las partes enteras)
+    ; 1. (Efectuar resta de las partes enteras)
         mov ax, arg1
         mov bx, 100
         sub ax, arg2
         mul bx
-        ; 2. (Efectuar resta de las partes flotantes)
+    ; 2. (Efectuar resta de las partes flotantes)
         xor bx, bx
         mov bx, darg1
         sub bx, darg2
-        ; 3. (Sumar ambas partes y dividir entre 100)
+    ; 3. (Sumar ambas partes y dividir entre 100)
         add ax, bx
         xor bx, bx
         mov bx, 100
@@ -117,8 +117,8 @@
         cmp dx, 0
             jz sub_case2
         ; Caso 1: Residuo en DX > DL
-        mov solv, ax
-        mov dsolv, dx
+        mov result, ax
+        mov dresult, dx
 
         jmp sub_case1
 
@@ -130,8 +130,8 @@
         mov bl, ah
 
         xor ax, ax
-        mov solv, cx
-        mov dsolv, bx
+        mov result, cx
+        mov dresult, bx
         
         sub_case1:
         ; (b)[Limpiar registros]
@@ -140,8 +140,137 @@
             mov cx, 0
             mov dx, 0
         ret
+    ; -----------------------------|'mult()'|-----------------------------
+    multiply: ; [INT1*INT2]+[(INT1*FLT2)/100]+[(INT2*FLT1)/100]+[(FLT1*FLT2)/100^2]
+    ; 1. (Efectuar multiplicacion de partes enteras)
+        mov ax, arg1
+        mov bx, arg2
+        mul bx
+        mov result, ax
+        ; (a)[limpiar registros]
+            xor ax,ax
+            xor bx, bx
+    ; 2. (Efectuar multiplicacion entero1-flotante2 dividido entre 100)
+        mov ax, arg1
+        mov bx, darg2
+        mul bx      ; AX = INT1*FLT2
+        xor bx, bx  ; Limpiar registro completo
+        mov bx, 100 
+        div bx      ; A? = (INT1*FLT2)/100
+        ; (a)[Manipular residuo y cociente de la division]
+        xor bx, bx
+        cmp dx, 0
+            jnz mult_case2
+        mult_case1: ; Residuo en AH y cociente en AL
+            mov bl, ah ; Mover residuo
+            mov cl, al ; Mover cociente
+
+            add result, cx  ; Acumular las partes enteras
+            add dresult, bx ; Acumular las partes flotantes
+
+            jmp mult_postproc1
+        mult_case2: ; Residuo en DX y cociente en AX
+            add result, ax  ; Acumular las partes enteras
+            add dresult, dx ; Acumular las partes flotantes
+        mult_postproc1:
+        ; (b)[Limipiar registros]
+            xor ax, ax
+            xor bx, bx
+            xor cx, cx
+            xor dx, dx
+    ; 3. (Efectuar multiplicacion entero2-flotante1 dividido entre 100)
+        mov ax, arg2
+        mov bx, darg1
+        mul bx      ; AX = INT2*FLT1
+        xor bx, bx  ; Limpiar registro completo
+        mov bx, 100 
+        div bx      ; A? = (INT2*FLT1)/100
+        ; (a)[Manipular residuo y cociente de la division]
+        xor bx, bx
+        cmp dx, 0
+            jnz mult_case4
+        mult_case3: ; Residuo en AH y cociente en AL
+            mov bl, ah ; Mover residuo
+            mov cl, al ; Mover cociente
+
+            add result, cx ; Acumular las partes enteras
+            add dresult, bx ; Acumular las partes flotantes
+            jmp mult_postproc2
+        mult_case4: ; Residuo en DX y cociente en AX
+            add result, ax  ; Acumular las partes enteras
+            add dresult, dx ; Acumular las partes flotantes
+        mult_postproc2:
+        ; (b)[Limipiar registros]
+            xor ax, ax
+            xor bx, bx
+            xor cx, cx
+            xor dx, dx
+    ; 4. (Efectuar multiplicacion flotante-flotante dividido entre 100*100)
+        mov ax, darg1
+        mov bx, darg2
+        mul bx  ; AX = FLT1*FLT2
+
+        xor bx, bx  ; Limpiar registro completo
+        mov bx, 100
+        div bx  ; A? = (FLT1*FLT2)/100
+
+        ; (a)[Descartar el primer residuo]
+        cmp dx, 0
+            jnz mult_case6
+        mult_case5: ; Residuo en AH y cociente en AL
+            xor ah, ah
+            jmp mult_postproc3
+        mult_case6: ; Residuo en DX y cociente en AX
+            xor dx, dx
+        ; (b)[Volver a dividir y ,en este, caso acumular la parte entera y flotante]
+        mult_postproc3:
+        div bx
+
+        xor bx, bx  ; Limpiar registro completo
+        cmp dx, 0
+            jnz mult_case8
+        mult_case7: ; Residuo en AH y cociente en AL
+            mov bl, ah  ; Mover residuo
+            mov cl, al  ; Mover cociente
+
+            add result, cx  ; Acumular las partes enteras
+            add dresult, bx ; Acumular las partes flotantes
+        mult_case8: ; Residuo en DX y cociente en AX
+            add result, ax  ; Acumular las partes enteras
+            add dresult, dx ; Acumular las partes flotantes
+        ; (c)[Limpiar registros]
+            xor ax, ax
+            xor bx, bx
+            xor cx, cx
+            xor dx, dx
+    ; 5. Ajuste de parte flotante y agregado a parte entera
+        mov ax, dresult
+        mov bx, 100
+        div bx  ; La division permite dejar dos digitos en la parte flotante total(residuo), el cociente seria el agregado a la parte entera
+        ; (a)[Manipular el residuo y cociente adecuadamente]
+        xor bx, bx ; Limpiar registro
+        cmp dx, 0
+            jnz mult_fix
+        mult_nofix: ; Residuo en AH y cociente en AL
+            mov bl, ah ; Mover residuo: BX=AH
+            xor ah, ah ; Limpiar AH: AX = AL (cociente)
+
+            add result, ax ; Sumar cociente(agregado) a la parte entera
+            add dresult, bx; Sumar residuo a la parte flotante
+
+            jmp mult_postfix
+        mult_fix:   ; Residuo en DX y cociente en AX
+            add result, ax ; Sumar cociente(agregado) a la parte entera
+            add dresult, dx; Sumar residuo a la parte flotante
+        mult_postfix:
+        ; (b)[Limpiar registros]
+            xor ax, ax
+            xor bx, bx
+            xor cx, cx
+            xor dx, dx
+        ret
     ; -----------------------------|'div()'|-----------------------------
-    divide:
+    divide: ; [100(INT1)+FLT1]/[100(INT2)+FLT2]
         ; 1. (Efectuar division de las partes enteras)
           ; 1.1 [Dividir: entero entre entero]
         
@@ -151,18 +280,6 @@
           ; 2.1 [Dividir: flotante entre entero]
         
           ; 2.2 [Multplicar: flotante entre flotante]
-        ret
-    ; -----------------------------|'mult()'|-----------------------------
-    multiply:
-        ; 1. (Efectuar multiplicacion de las partes enteras)
-          ; 1.1 [Multiplicar: entero entre entero]
-        
-          ; 1.2 [Dividir: entero entre flotante]
-          
-        ; 2. (Efectuar multiplicacion de las partes flotantes) 
-          ; 2.1 [Dividir: flotante entre entero]
-                  ; 2.2 [Multplicar: flotante entre flotante]
-
         ret
     ; --------------------------------|carryhandler()|--------------------------------
     carryHandler:
