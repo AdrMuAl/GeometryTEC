@@ -5,15 +5,20 @@
                DB 'Bienvenido a GeometryTec', 0Dh, 0Ah, '$'
     msgPrompt DB 0Dh, 0Ah, 'Por favor indique a que figura desea calcular su area y perimetro:', 0Dh, 0Ah, '$'
     msgOptions DB 0Dh, 0Ah, 'Presione:', 0Dh, 0Ah
-                DB '1. Para Cuadrado.', 0Dh, 0Ah, '$'
+                DB '1. Para Cuadrado.', 0Dh, 0Ah
+                DB '2. Para Rectangulo.', 0Dh, 0Ah, '$'
     msgInvalid DB 0Dh, 0Ah, 'Opcion invalida. Intente de nuevo.', 0Dh, 0Ah, '$'
     msgContinue DB 0Dh, 0Ah, 'Por favor presione:', 0Dh, 0Ah
                  DB '1. Para Continuar.', 0Dh, 0Ah
                  DB '2. Para Salir.', 0Dh, 0Ah, '$'
     promptSize1 DB 0Dh, 0Ah, 'Por favor ingrese el tamano del lado: $'
+    promptLargo DB 0Dh, 0Ah, 'Por favor ingrese el largo del rectangulo: $'
+    promptAncho DB 0Dh, 0Ah, 'Por favor ingrese el ancho del rectangulo: $'
     msgArea DB 0Dh, 0Ah, 'El area es: $'
     msgPerimeter DB 0Dh, 0Ah, 'El perimetro es: $'
     intValue DW 0              ; Para almacenar el valor convertido a entero (16 bits)
+    largo DW 0                 ; Para almacenar el largo del rectángulo
+    ancho DW 0                 ; Para almacenar el ancho del rectángulo
     area DD 0                  ; Variable para el área (32 bits)
     perimeter DW 0             ; Variable para el perímetro (16 bits)
     string1 DB 10 DUP(' '), '$' ; 10 espacios para la parte entera y terminador
@@ -48,6 +53,8 @@ SELECCIONAR_FIGURA:
     ; Verificación de la opción seleccionada
     CMP AL, 1
     JE CALC_CUADRADO_JUMP
+    CMP AL, 2
+    JE CALC_RECTANGULO_JUMP
 
 INVALID_OPTION:
     ; Imprime mensaje de opción inválida y regresa al menú
@@ -61,7 +68,7 @@ CALC_CUADRADO_JUMP:
     MOV AH, 09H
     INT 21H
 
-    ; Llamada a la nueva rutina para leer el número
+    ; Llamada a la rutina para leer el número
     CALL READ_NUMBER_NEW
 
     ; Validación de la entrada para asegurarse de que está en el rango 0-9999
@@ -85,6 +92,48 @@ CALC_CUADRADO_JUMP:
     ; Muestra los resultados
     JMP DISPLAY_RESULTS
 
+CALC_RECTANGULO_JUMP:
+    ; Leer el largo
+    LEA DX, promptLargo
+    MOV AH, 09H
+    INT 21H
+    CALL READ_NUMBER_NEW
+    MOV largo, AX
+
+    ; Leer el ancho
+    LEA DX, promptAncho
+    MOV AH, 09H
+    INT 21H
+    CALL READ_NUMBER_NEW
+    MOV ancho, AX
+
+    ; Validación de las entradas
+    CMP largo, 0
+    JLE INVALID_OPTION
+    CMP largo, 9999
+    JG INVALID_OPTION
+    CMP ancho, 0
+    JLE INVALID_OPTION
+    CMP ancho, 9999
+    JG INVALID_OPTION
+
+    ; Cálculo del área del rectángulo
+    MOV AX, largo
+    MUL ancho          ; DX:AX = largo * ancho (área)
+    MOV WORD PTR [area], AX
+    MOV WORD PTR [area+2], DX
+
+    ; Cálculo del perímetro del rectángulo
+    MOV AX, largo
+    ADD AX, AX         ; 2 * largo
+    MOV BX, ancho
+    ADD BX, BX         ; 2 * ancho
+    ADD AX, BX         ; 2*largo + 2*ancho
+    MOV perimeter, AX
+
+    ; Muestra los resultados
+    JMP DISPLAY_RESULTS
+
 DISPLAY_RESULTS:
     ; Mostrar el área
     LEA DX, msgArea
@@ -93,7 +142,7 @@ DISPLAY_RESULTS:
 
     MOV AX, WORD PTR [area]
     MOV DX, WORD PTR [area+2]
-    CALL PARSE32              ; Nueva rutina para convertir números de 32 bits
+    CALL PARSE32
     LEA DX, string1
     CALL PRINTOUT
 
@@ -103,7 +152,7 @@ DISPLAY_RESULTS:
     INT 21H
 
     MOV AX, perimeter
-    XOR DX, DX              ; Limpia DX para el perímetro (16 bits)
+    XOR DX, DX
     CALL PARSE32
     LEA DX, string1
     CALL PRINTOUT
@@ -118,7 +167,7 @@ PREGUNTAR_CONTINUAR:
 
     MOV AH, 01H
     INT 21H
-    SUB AL, '0'        ; Convierte el carácter leído a un número
+    SUB AL, '0'
 
     CMP AL, 1
     JNE CHECK_EXIT
@@ -126,7 +175,7 @@ PREGUNTAR_CONTINUAR:
 
 CHECK_EXIT:
     CMP AL, 2
-    JNE PREGUNTAR_CONTINUAR  ; Si no es 1 ni 2, volver a preguntar
+    JNE PREGUNTAR_CONTINUAR
     JMP EXIT
 
 EXIT:
@@ -134,72 +183,67 @@ EXIT:
     MOV AH, 4CH
     INT 21H
 
-; Rutina para leer un número entero del usuario
 READ_NUMBER_NEW PROC
-    XOR BX, BX         ; Usa BX para acumular el resultado (16 bits)
-    MOV CX, 10         ; Factor de multiplicación
+    XOR BX, BX
+    MOV CX, 10
 
 READ_LOOP_NEW:
-    MOV AH, 01H        ; Llama a INT 21H para leer un carácter
+    MOV AH, 01H
     INT 21H
-    CMP AL, 0Dh        ; Verifica si se presionó Enter
+    CMP AL, 0Dh
     JE END_READ_LOOP_NEW
-    CMP AL, '0'        ; Verifica si el carácter es menor que '0'
+    CMP AL, '0'
     JL INVALID_INPUT
-    CMP AL, '9'        ; Verifica si el carácter es mayor que '9'
+    CMP AL, '9'
     JG INVALID_INPUT
-    SUB AL, '0'        ; Convierte el carácter leído a un número
-    MOV AH, 0          ; Limpia AH
-    PUSH AX            ; Guarda el dígito
-    MOV AX, BX         ; Mueve el valor acumulado a AX
-    MUL CX             ; Multiplica por 10
-    JC OVERFLOW        ; Salta si hay overflow
-    MOV BX, AX         ; Guarda el resultado en BX
-    POP AX             ; Recupera el dígito
-    ADD BX, AX         ; Suma el dígito al valor acumulado
-    JC OVERFLOW        ; Salta si hay overflow
+    SUB AL, '0'
+    MOV AH, 0
+    PUSH AX
+    MOV AX, BX
+    MUL CX
+    JC OVERFLOW
+    MOV BX, AX
+    POP AX
+    ADD BX, AX
+    JC OVERFLOW
     JMP READ_LOOP_NEW
 
 INVALID_INPUT:
-    ; Manejar entrada inválida
     JMP READ_LOOP_NEW
 
 OVERFLOW:
-    ; Manejar overflow
-    MOV BX, 9999       ; Establecer el valor máximo permitido
+    MOV BX, 9999
     JMP END_READ_LOOP_NEW
 
 END_READ_LOOP_NEW:
-    MOV intValue, BX   ; Almacena el valor final en intValue
+    MOV AX, BX  ; Devolver el valor en AX
     RET
 READ_NUMBER_NEW ENDP
 
-; Nueva rutina para parsear un número de 32 bits en una cadena
 PARSE32 PROC
     PUSH BX
     PUSH CX
     PUSH SI
-    MOV SI, 9          ; Empezar desde el final de string1
-    MOV BX, 10         ; Divisor
-    MOV CX, 0          ; Contador de dígitos
+    MOV SI, 9
+    MOV BX, 10
+    MOV CX, 0
 
 PARSE32_LOOP:
-    PUSH AX            ; Guardar AX
-    MOV AX, DX         ; Preparar para división de 32 bits
+    PUSH AX
+    MOV AX, DX
     XOR DX, DX
     DIV BX
-    MOV DI, AX         ; Guardar cociente alto
-    POP AX             ; Recuperar parte baja
-    DIV BX             ; AX = cociente bajo, DX = residuo
-    ADD DL, '0'        ; Convertir residuo a ASCII
+    MOV DI, AX
+    POP AX
+    DIV BX
+    ADD DL, '0'
     MOV [string1+SI], DL
     DEC SI
     INC CX
-    MOV DX, DI         ; Preparar para siguiente iteración
-    OR AX, DX          ; Verificar si quedan dígitos
+    MOV DX, DI
+    OR AX, DX
     JNZ PARSE32_LOOP
 
-    ; Ajustar la cadena
     MOV AL, ' '
 FILL_SPACES:
     CMP SI, -1
@@ -215,7 +259,6 @@ DONE_PARSING:
     RET
 PARSE32 ENDP
 
-; Rutina para imprimir una cadena en pantalla
 PRINTOUT PROC
     MOV AH, 09H
     INT 21H
