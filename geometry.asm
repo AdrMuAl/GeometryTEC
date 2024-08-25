@@ -1,271 +1,141 @@
 .MODEL SMALL
 .STACK 100H
 .DATA
+    ; Mensajes de texto para la interfaz del usuario
     msgWelcome DB '******************************************', 0Dh, 0Ah, '$'
                DB 'Bienvenido a GeometryTec', 0Dh, 0Ah, '$'
     msgPrompt DB 0Dh, 0Ah, 'Por favor indique a que figura desea calcular su area y perimetro:', 0Dh, 0Ah, '$'
     msgOptions DB 0Dh, 0Ah, 'Presione:', 0Dh, 0Ah
                 DB '1. Para Cuadrado.', 0Dh, 0Ah
-                DB '2. Para Rectangulo.', 0Dh, 0Ah, '$'
+                DB '2. Para Rectangulo.', 0Dh, 0Ah
+                DB '3. Para Triangulo Equilatero.', 0Dh, 0Ah
+                DB '4. Para Rombo.', 0Dh, 0Ah
+                DB '5. Para Pentagono.', 0Dh, 0Ah
+                DB '6. Para Hexagono.', 0Dh, 0Ah
+                DB '7. Para Circulo.', 0Dh, 0Ah
+                DB '8. Para Trapecio.', 0Dh, 0Ah
+                DB '9. Para Paralelogramo.', 0Dh, 0Ah, '$'
     msgInvalid DB 0Dh, 0Ah, 'Opcion invalida. Intente de nuevo.', 0Dh, 0Ah, '$'
     msgContinue DB 0Dh, 0Ah, 'Por favor presione:', 0Dh, 0Ah
                  DB '1. Para Continuar.', 0Dh, 0Ah
                  DB '2. Para Salir.', 0Dh, 0Ah, '$'
+    
+    ; Prompts para solicitar medidas de las figuras
     promptSize1 DB 0Dh, 0Ah, 'Por favor ingrese el tamano del lado: $'
     promptLargo DB 0Dh, 0Ah, 'Por favor ingrese el largo del rectangulo: $'
     promptAncho DB 0Dh, 0Ah, 'Por favor ingrese el ancho del rectangulo: $'
+    promptBase DB 0Dh, 0Ah, 'Por favor ingrese la base del triangulo: $'
+    promptAltura DB 0Dh, 0Ah, 'Por favor ingrese la altura del triangulo: $'
+    promptLadoRombo DB 0Dh, 0Ah, 'Por favor ingrese el tamano del lado del rombo: $'
+    promptDiagonalMayor DB 0Dh, 0Ah, 'Por favor ingrese la diagonal mayor del rombo: $'
+    promptDiagonalMenor DB 0Dh, 0Ah, 'Por favor ingrese la diagonal menor del rombo: $'
+    promptLadoPentagono DB 0Dh, 0Ah, 'Por favor ingrese la medida del lado del pentagono: $'
+    promptApotema DB 0Dh, 0Ah, 'Por favor ingrese la medida de la apotema del pentagono: $'
+    promptLadoHexagono DB 0Dh, 0Ah, 'Por favor ingrese la medida del lado del hexagono: $'
+    promptApotemaHexagono DB 0Dh, 0Ah, 'Por favor ingrese la medida de la apotema del hexagono: $'
+    promptAlturaTrapecio DB 0Dh, 0Ah, 'Por favor ingrese la altura del trapecio: $'
+    promptBaseMayorTrapecio DB 0Dh, 0Ah, 'Por favor ingrese la base mayor del trapecio: $'
+    promptBaseMenorTrapecio DB 0Dh, 0Ah, 'Por favor ingrese la base menor del trapecio: $'
+    promptLadoMenorTrapecio DB 0Dh, 0Ah, 'Por favor ingrese el lado menor del trapecio: $'
+    promptAlturaParalelogramo DB 0Dh, 0Ah, 'Por favor ingrese la altura del paralelogramo: $'
+    promptLadoParalelogramo DB 0Dh, 0Ah, 'Por favor ingrese el lado del paralelogramo: $'
+    promptBaseParalelogramo DB 0Dh, 0Ah, 'Por favor ingrese la base del paralelogramo: $'
+    
+    ; Mensajes para mostrar los resultados
     msgArea DB 0Dh, 0Ah, 'El area es: $'
     msgPerimeter DB 0Dh, 0Ah, 'El perimetro es: $'
-    intValue DW 0              ; Para almacenar el valor convertido a entero (16 bits)
-    largo DW 0                 ; Para almacenar el largo del rectángulo
-    ancho DW 0                 ; Para almacenar el ancho del rectángulo
-    area DD 0                  ; Variable para el área (32 bits)
-    perimeter DW 0             ; Variable para el perímetro (16 bits)
-    string1 DB 10 DUP(' '), '$' ; 10 espacios para la parte entera y terminador
+
+    ; Variables para almacenar los valores de entrada y los resultados
+    intValue DW 0
+    largo DW 0
+    ancho DW 0
+    base DW 0
+    altura DW 0
+    ladoRombo DW 0
+    diagonalMayor DW 0
+    diagonalMenor DW 0
+    ladoPentagono DW 0
+    apotema DW 0
+    ladoHexagono DW 0
+    apotemaHexagono DW 0
+    alturaTrapecio DW 0
+    baseMayorTrapecio DW 0
+    baseMenorTrapecio DW 0
+    ladoMenorTrapecio DW 0
+    alturaParalelogramo DW 0
+    ladoParalelogramo DW 0
+    baseParalelogramo DW 0
+    area DD 0        ; Área se almacena en un doble palabra para manejar números grandes
+    perimeter DW 0   ; Perímetro en una palabra
+    string1 DB 10 DUP(' '), '$' ; Cadena temporal para mostrar los números
 
 .CODE
 START:
-    ; Inicializa el segmento de datos
     MOV AX, @DATA
-    MOV DS, AX
+    MOV DS, AX    ; Inicializa el segmento de datos
 
-    ; Imprime el mensaje de bienvenida
     LEA DX, msgWelcome
     MOV AH, 09H
-    INT 21H
+    INT 21H      ; Muestra el mensaje de bienvenida
 
 SELECCIONAR_FIGURA:
-    ; Imprime el mensaje solicitando la figura
     LEA DX, msgPrompt
     MOV AH, 09H
-    INT 21H
+    INT 21H      ; Muestra el prompt para seleccionar la figura
 
-    ; Imprime las opciones
     LEA DX, msgOptions
     MOV AH, 09H
-    INT 21H
+    INT 21H      ; Muestra las opciones de figuras
 
-    ; Lee la opción seleccionada por el usuario
     MOV AH, 01H
-    INT 21H
-    SUB AL, '0'        ; Convierte el carácter leído a un número
+    INT 21H      ; Lee la opción seleccionada por el usuario
+    SUB AL, '0'  ; Convierte el carácter a un número
 
-    ; Verificación de la opción seleccionada
+    ; Comparación de la opción seleccionada y saltos a la rutina correspondiente
     CMP AL, 1
     JE CALC_CUADRADO_JUMP
     CMP AL, 2
     JE CALC_RECTANGULO_JUMP
-
-INVALID_OPTION:
-    ; Imprime mensaje de opción inválida y regresa al menú
-    LEA DX, msgInvalid
-    MOV AH, 09H
-    INT 21H
-    JMP SELECCIONAR_FIGURA
+    CMP AL, 3
+    JE CALC_TRIANGULO_JUMP
+    CMP AL, 4
+    JE CALC_ROMBO_JUMP
+    CMP AL, 5
+    JE CALC_PENTAGONO_JUMP
+    CMP AL, 6
+    JE CALC_HEXAGONO_JUMP
+    CMP AL, 8
+    JE CALC_TRAPECIO_JUMP
+    CMP AL, 9
+    JE CALC_PARALELOGRAMO_JUMP
+    JMP INVALID_OPTION  ; Si no es ninguna opción válida, muestra error
 
 CALC_CUADRADO_JUMP:
-    LEA DX, promptSize1
-    MOV AH, 09H
-    INT 21H
-
-    ; Llamada a la rutina para leer el número
-    CALL READ_NUMBER_NEW
-
-    ; Validación de la entrada para asegurarse de que está en el rango 0-9999
-    CMP intValue, 0
-    JL INVALID_OPTION
-    CMP intValue, 9999
-    JG INVALID_OPTION
-
-    ; Cálculo del área y perímetro
-    MOV AX, intValue
-    MOV BX, AX
-    MUL BX            ; DX:AX = intValue * intValue (área)
-    MOV WORD PTR [area], AX
-    MOV WORD PTR [area+2], DX
-
-    MOV AX, intValue
-    ADD AX, AX
-    ADD AX, AX
-    MOV perimeter, AX  ; perimeter = 4 * intValue
-
-    ; Muestra los resultados
-    JMP DISPLAY_RESULTS
+    JMP CALC_CUADRADO   ; Salta a la rutina para calcular cuadrado
 
 CALC_RECTANGULO_JUMP:
-    ; Leer el largo
-    LEA DX, promptLargo
+    JMP CALC_RECTANGULO ; Salta a la rutina para calcular rectángulo
+
+CALC_TRIANGULO_JUMP:
+    JMP CALC_TRIANGULO  ; Salta a la rutina para calcular triángulo
+
+CALC_ROMBO_JUMP:
+    JMP CALC_ROMBO      ; Salta a la rutina para calcular rombo
+    
+CALC_PENTAGONO_JUMP:
+    JMP CALC_PENTAGONO  ; Salta a la rutina para calcular pentágono
+
+CALC_HEXAGONO_JUMP:
+    JMP CALC_HEXAGONO   ; Salta a la rutina para calcular hexágono
+
+CALC_TRAPECIO_JUMP:
+    JMP CALC_TRAPECIO   ; Salta a la rutina para calcular trapecio
+    
+CALC_PARALELOGRAMO_JUMP:
+    JMP CALC_PARALELOGRAMO ; Salta a la rutina para calcular paralelogramo
+
+INVALID_OPTION:
+    LEA DX, msgInvalid
     MOV AH, 09H
-    INT 21H
-    CALL READ_NUMBER_NEW
-    MOV largo, AX
-
-    ; Leer el ancho
-    LEA DX, promptAncho
-    MOV AH, 09H
-    INT 21H
-    CALL READ_NUMBER_NEW
-    MOV ancho, AX
-
-    ; Validación de las entradas
-    CMP largo, 0
-    JLE INVALID_OPTION
-    CMP largo, 9999
-    JG INVALID_OPTION
-    CMP ancho, 0
-    JLE INVALID_OPTION
-    CMP ancho, 9999
-    JG INVALID_OPTION
-
-    ; Cálculo del área del rectángulo
-    MOV AX, largo
-    MUL ancho          ; DX:AX = largo * ancho (área)
-    MOV WORD PTR [area], AX
-    MOV WORD PTR [area+2], DX
-
-    ; Cálculo del perímetro del rectángulo
-    MOV AX, largo
-    ADD AX, AX         ; 2 * largo
-    MOV BX, ancho
-    ADD BX, BX         ; 2 * ancho
-    ADD AX, BX         ; 2*largo + 2*ancho
-    MOV perimeter, AX
-
-    ; Muestra los resultados
-    JMP DISPLAY_RESULTS
-
-DISPLAY_RESULTS:
-    ; Mostrar el área
-    LEA DX, msgArea
-    MOV AH, 09H
-    INT 21H
-
-    MOV AX, WORD PTR [area]
-    MOV DX, WORD PTR [area+2]
-    CALL PARSE32
-    LEA DX, string1
-    CALL PRINTOUT
-
-    ; Mostrar el perímetro
-    LEA DX, msgPerimeter
-    MOV AH, 09H
-    INT 21H
-
-    MOV AX, perimeter
-    XOR DX, DX
-    CALL PARSE32
-    LEA DX, string1
-    CALL PRINTOUT
-
-    JMP PREGUNTAR_CONTINUAR
-
-PREGUNTAR_CONTINUAR:
-    ; Pregunta al usuario si desea continuar o salir
-    LEA DX, msgContinue
-    MOV AH, 09H
-    INT 21H
-
-    MOV AH, 01H
-    INT 21H
-    SUB AL, '0'
-
-    CMP AL, 1
-    JNE CHECK_EXIT
-    JMP SELECCIONAR_FIGURA
-
-CHECK_EXIT:
-    CMP AL, 2
-    JNE PREGUNTAR_CONTINUAR
-    JMP EXIT
-
-EXIT:
-    ; Termina el programa
-    MOV AH, 4CH
-    INT 21H
-
-READ_NUMBER_NEW PROC
-    XOR BX, BX
-    MOV CX, 10
-
-READ_LOOP_NEW:
-    MOV AH, 01H
-    INT 21H
-    CMP AL, 0Dh
-    JE END_READ_LOOP_NEW
-    CMP AL, '0'
-    JL INVALID_INPUT
-    CMP AL, '9'
-    JG INVALID_INPUT
-    SUB AL, '0'
-    MOV AH, 0
-    PUSH AX
-    MOV AX, BX
-    MUL CX
-    JC OVERFLOW
-    MOV BX, AX
-    POP AX
-    ADD BX, AX
-    JC OVERFLOW
-    JMP READ_LOOP_NEW
-
-INVALID_INPUT:
-    JMP READ_LOOP_NEW
-
-OVERFLOW:
-    MOV BX, 9999
-    JMP END_READ_LOOP_NEW
-
-END_READ_LOOP_NEW:
-    MOV AX, BX  ; Devolver el valor en AX
-    RET
-READ_NUMBER_NEW ENDP
-
-PARSE32 PROC
-    PUSH BX
-    PUSH CX
-    PUSH SI
-    MOV SI, 9
-    MOV BX, 10
-    MOV CX, 0
-
-PARSE32_LOOP:
-    PUSH AX            ; Guardar AX
-    MOV AX, DX         ; Preparar para división de 32 bits
-    XOR DX, DX
-    DIV BX
-    MOV DI, AX         ; Guardar cociente alto
-    POP AX             ; Recuperar parte baja
-    DIV BX             ; AX = cociente bajo, DX = residuo
-    ADD DL, '0'        ; Convertir residuo a ASCII
-    MOV [string1+SI], DL
-    DEC SI
-    INC CX
-    MOV DX, DI         ; Preparar para siguiente iteración
-    CMP AX, 0          ; Comparar AX con 0
-    JNZ PARSE32_LOOP   
-    CMP DX, 0          ; Comparar DX con 0
-    JNZ PARSE32_LOOP   
-
-    ; Ajustar la cadena
-    MOV AL, ' '
-FILL_SPACES:
-    CMP SI, -1
-    JE DONE_PARSING
-    MOV [string1+SI], AL
-    DEC SI
-    JMP FILL_SPACES
-
-DONE_PARSING:
-    POP SI
-    POP CX
-    POP BX
-    RET
-PARSE32 ENDP
-
-PRINTOUT PROC
-    MOV AH, 09H
-    INT 21H
-    RET
-PRINTOUT ENDP
-
-END START
+    INT 21H       ; Muestra un mensaje de opción inválida
+    JMP SELECCIONAR_FIGURA ; Vuelve a pedir la selección de figura
