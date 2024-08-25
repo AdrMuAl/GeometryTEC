@@ -229,21 +229,24 @@ PARSE32 PROC
     MOV CX, 0
 
 PARSE32_LOOP:
-    PUSH AX
-    MOV AX, DX
+    PUSH AX            ; Guardar AX
+    MOV AX, DX         ; Preparar para división de 32 bits
     XOR DX, DX
     DIV BX
-    MOV DI, AX
-    POP AX
-    DIV BX
-    ADD DL, '0'
+    MOV DI, AX         ; Guardar cociente alto
+    POP AX             ; Recuperar parte baja
+    DIV BX             ; AX = cociente bajo, DX = residuo
+    ADD DL, '0'        ; Convertir residuo a ASCII
     MOV [string1+SI], DL
     DEC SI
     INC CX
-    MOV DX, DI
-    OR AX, DX
-    JNZ PARSE32_LOOP
+    MOV DX, DI         ; Preparar para siguiente iteración
+    CMP AX, 0          ; Comparar AX con 0
+    JNZ PARSE32_LOOP   
+    CMP DX, 0          ; Comparar DX con 0
+    JNZ PARSE32_LOOP   
 
+    ; Ajustar la cadena
     MOV AL, ' '
 FILL_SPACES:
     CMP SI, -1
