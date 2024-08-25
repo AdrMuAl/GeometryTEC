@@ -139,3 +139,511 @@ INVALID_OPTION:
     MOV AH, 09H
     INT 21H       ; Muestra un mensaje de opción inválida
     JMP SELECCIONAR_FIGURA ; Vuelve a pedir la selección de figura
+
+
+CALC_CUADRADO:
+    LEA DX, promptSize1
+    MOV AH, 09H
+    INT 21H
+
+    CALL READ_NUMBER_NEW
+    MOV intValue, AX
+
+    CMP intValue, 0
+    JLE INVALID_OPTION
+    CMP intValue, 9999
+    JG INVALID_OPTION
+
+    MOV AX, intValue
+    MOV BX, AX
+    MUL BX
+    MOV WORD PTR [area], AX
+    MOV WORD PTR [area+2], DX
+
+    MOV AX, intValue
+    ADD AX, AX
+    ADD AX, AX
+    MOV perimeter, AX
+
+    JMP DISPLAY_RESULTS
+
+CALC_RECTANGULO:
+    LEA DX, promptLargo
+    MOV AH, 09H
+    INT 21H
+    CALL READ_NUMBER_NEW
+    MOV largo, AX
+
+    LEA DX, promptAncho
+    MOV AH, 09H
+    INT 21H
+    CALL READ_NUMBER_NEW
+    MOV ancho, AX
+
+    CMP largo, 0
+    JLE INVALID_INPUT_RECT
+    CMP largo, 9999
+    JG INVALID_INPUT_RECT
+    CMP ancho, 0
+    JLE INVALID_INPUT_RECT
+    CMP ancho, 9999
+    JG INVALID_INPUT_RECT
+    JMP CALC_RECT_AREA
+
+INVALID_INPUT_RECT:
+    JMP INVALID_OPTION
+
+CALC_RECT_AREA:
+    MOV AX, largo
+    MUL ancho
+    MOV WORD PTR [area], AX
+    MOV WORD PTR [area+2], DX
+
+    MOV AX, largo
+    ADD AX, AX
+    MOV BX, ancho
+    ADD BX, BX
+    ADD AX, BX
+    MOV perimeter, AX
+
+    JMP DISPLAY_RESULTS
+
+CALC_TRIANGULO:
+    LEA DX, promptBase
+    MOV AH, 09H
+    INT 21H
+    CALL READ_NUMBER_NEW
+    MOV base, AX
+
+    LEA DX, promptAltura
+    MOV AH, 09H
+    INT 21H
+    CALL READ_NUMBER_NEW
+    MOV altura, AX
+
+    CMP base, 0
+    JLE INVALID_INPUT_TRI
+    CMP base, 9999
+    JG INVALID_INPUT_TRI
+    CMP altura, 0
+    JLE INVALID_INPUT_TRI
+    CMP altura, 9999
+    JG INVALID_INPUT_TRI
+    JMP CALC_TRI_AREA
+
+INVALID_INPUT_TRI:
+    JMP INVALID_OPTION
+
+CALC_TRI_AREA:
+    MOV AX, base
+    MUL altura
+    MOV BX, 2
+    DIV BX
+    MOV WORD PTR [area], AX
+    MOV WORD PTR [area+2], 0
+
+    MOV AX, base
+    MOV BX, 3
+    MUL BX
+    MOV perimeter, AX
+
+    JMP DISPLAY_RESULTS
+
+CALC_ROMBO:
+    LEA DX, promptLadoRombo
+    MOV AH, 09H
+    INT 21H
+    CALL READ_NUMBER_NEW
+    MOV ladoRombo, AX
+
+    LEA DX, promptDiagonalMayor
+    MOV AH, 09H
+    INT 21H
+    CALL READ_NUMBER_NEW
+    MOV diagonalMayor, AX
+
+    LEA DX, promptDiagonalMenor
+    MOV AH, 09H
+    INT 21H
+    CALL READ_NUMBER_NEW
+    MOV diagonalMenor, AX
+
+    CMP ladoRombo, 0
+    JLE INVALID_INPUT_ROMBO
+    CMP ladoRombo, 9999
+    JG INVALID_INPUT_ROMBO
+    CMP diagonalMayor, 0
+    JLE INVALID_INPUT_ROMBO
+    CMP diagonalMayor, 9999
+    JG INVALID_INPUT_ROMBO
+    CMP diagonalMenor, 0
+    JLE INVALID_INPUT_ROMBO
+    CMP diagonalMenor, 9999
+    JG INVALID_INPUT_ROMBO
+    JMP CALC_ROMBO_AREA
+
+INVALID_INPUT_ROMBO:
+    JMP INVALID_OPTION
+
+CALC_ROMBO_AREA:
+    MOV AX, diagonalMayor
+    MUL diagonalMenor
+    MOV BX, 2
+    DIV BX
+    MOV WORD PTR [area], AX
+    MOV WORD PTR [area+2], 0
+
+    MOV AX, ladoRombo
+    MOV BX, 4
+    MUL BX
+    MOV perimeter, AX
+
+    JMP DISPLAY_RESULTS
+
+CALC_PENTAGONO:
+    LEA DX, promptLadoPentagono
+    MOV AH, 09H
+    INT 21H
+    CALL READ_NUMBER_NEW
+    MOV ladoPentagono, AX
+
+    LEA DX, promptApotema
+    MOV AH, 09H
+    INT 21H
+    CALL READ_NUMBER_NEW
+    MOV apotema, AX
+
+    CMP ladoPentagono, 0
+    JLE INVALID_INPUT_PENT
+    CMP ladoPentagono, 9999
+    JG INVALID_INPUT_PENT
+    CMP apotema, 0
+    JLE INVALID_INPUT_PENT
+    CMP apotema, 9999
+    JG INVALID_INPUT_PENT
+    JMP CALC_PENT_AREA
+
+INVALID_INPUT_PENT:
+    JMP INVALID_OPTION
+
+CALC_PENT_AREA:
+    ; Cálculo del perímetro: 5 * lado
+    MOV AX, ladoPentagono
+    MOV BX, 5
+    MUL BX
+    MOV perimeter, AX
+
+    ; Cálculo del área: (Perímetro * Apotema) / 2
+    MOV AX, perimeter
+    MUL apotema
+    MOV BX, 2
+    DIV BX
+    MOV WORD PTR [area], AX
+    MOV WORD PTR [area+2], DX
+
+    JMP DISPLAY_RESULTS
+    
+CALC_HEXAGONO:
+    LEA DX, promptLadoHexagono
+    MOV AH, 09H
+    INT 21H
+    CALL READ_NUMBER_NEW
+    MOV ladoHexagono, AX
+
+    LEA DX, promptApotemaHexagono
+    MOV AH, 09H
+    INT 21H
+    CALL READ_NUMBER_NEW
+    MOV apotemaHexagono, AX
+
+    CMP ladoHexagono, 0
+    JLE INVALID_INPUT_HEX
+    CMP ladoHexagono, 9999
+    JG INVALID_INPUT_HEX
+    CMP apotemaHexagono, 0
+    JLE INVALID_INPUT_HEX
+    CMP apotemaHexagono, 9999
+    JG INVALID_INPUT_HEX
+    JMP CALC_HEX_AREA
+
+INVALID_INPUT_HEX:
+    JMP INVALID_OPTION
+
+CALC_HEX_AREA:
+    ; Cálculo del perímetro: 6 * lado
+    MOV AX, ladoHexagono
+    MOV BX, 6
+    MUL BX
+    MOV perimeter, AX
+
+    ; Cálculo del área: (Perímetro * Apotema) / 2
+    MOV AX, perimeter
+    MUL apotemaHexagono
+    MOV BX, 2
+    DIV BX
+    MOV WORD PTR [area], AX
+    MOV WORD PTR [area+2], DX
+
+    JMP DISPLAY_RESULTS
+
+CALC_TRAPECIO:
+    LEA DX, promptAlturaTrapecio
+    MOV AH, 09H
+    INT 21H
+    CALL READ_NUMBER_NEW
+    MOV alturaTrapecio, AX
+
+    LEA DX, promptBaseMayorTrapecio
+    MOV AH, 09H
+    INT 21H
+    CALL READ_NUMBER_NEW
+    MOV baseMayorTrapecio, AX
+
+    LEA DX, promptBaseMenorTrapecio
+    MOV AH, 09H
+    INT 21H
+    CALL READ_NUMBER_NEW
+    MOV baseMenorTrapecio, AX
+
+    LEA DX, promptLadoMenorTrapecio
+    MOV AH, 09H
+    INT 21H
+    CALL READ_NUMBER_NEW
+    MOV ladoMenorTrapecio, AX
+
+    CMP alturaTrapecio, 0
+    JLE INVALID_INPUT_TRAP
+    CMP alturaTrapecio, 9999
+    JG INVALID_INPUT_TRAP
+    CMP baseMayorTrapecio, 0
+    JLE INVALID_INPUT_TRAP
+    CMP baseMayorTrapecio, 9999
+    JG INVALID_INPUT_TRAP
+    CMP baseMenorTrapecio, 0
+    JLE INVALID_INPUT_TRAP
+    CMP baseMenorTrapecio, 9999
+    JG INVALID_INPUT_TRAP
+    CMP ladoMenorTrapecio, 0
+    JLE INVALID_INPUT_TRAP
+    CMP ladoMenorTrapecio, 9999
+    JG INVALID_INPUT_TRAP
+    JMP CALC_TRAP_AREA
+
+INVALID_INPUT_TRAP:
+    JMP INVALID_OPTION
+
+CALC_TRAP_AREA:
+    ; Cálculo del perímetro: (2*LADO MENOR)+BASE MAYOR+BASE MENOR
+    MOV AX, ladoMenorTrapecio
+    ADD AX, AX
+    ADD AX, baseMayorTrapecio
+    ADD AX, baseMenorTrapecio
+    MOV perimeter, AX
+
+    ; Cálculo del área: ((BASE MAYOR + BASE MENOR) * ALTURA) / 2
+    
+    ; Primero, sumamos BASE MAYOR + BASE MENOR
+    MOV AX, baseMayorTrapecio
+    ADD AX, baseMenorTrapecio
+    
+    ; Multiplicamos por ALTURA
+    MUL alturaTrapecio  ; DX:AX = (BASE MAYOR + BASE MENOR) * ALTURA
+    
+    ; Dividimos por 2
+    MOV BX, 2
+    DIV BX  ; AX = ((BASE MAYOR + BASE MENOR) * ALTURA) / 2, DX = remainder
+
+    ; Guardamos el resultado
+    MOV WORD PTR [area], AX
+    MOV WORD PTR [area+2], DX  ; Guardamos el residuo en la parte alta por si acaso
+
+    JMP DISPLAY_RESULTS
+
+CALC_PARALELOGRAMO:
+    LEA DX, promptAlturaParalelogramo
+    MOV AH, 09H
+    INT 21H
+    CALL READ_NUMBER_NEW
+    MOV alturaParalelogramo, AX
+
+    LEA DX, promptLadoParalelogramo
+    MOV AH, 09H
+    INT 21H
+    CALL READ_NUMBER_NEW
+    MOV ladoParalelogramo, AX
+
+    LEA DX, promptBaseParalelogramo
+    MOV AH, 09H
+    INT 21H
+    CALL READ_NUMBER_NEW
+    MOV baseParalelogramo, AX
+
+    CMP alturaParalelogramo, 0
+    JLE INVALID_INPUT_PARA
+    CMP alturaParalelogramo, 9999
+    JG INVALID_INPUT_PARA
+    CMP ladoParalelogramo, 0
+    JLE INVALID_INPUT_PARA
+    CMP ladoParalelogramo, 9999
+    JG INVALID_INPUT_PARA
+    CMP baseParalelogramo, 0
+    JLE INVALID_INPUT_PARA
+    CMP baseParalelogramo, 9999
+    JG INVALID_INPUT_PARA
+    JMP CALC_PARA_AREA
+
+INVALID_INPUT_PARA:
+    JMP INVALID_OPTION
+
+CALC_PARA_AREA:
+    ; Cálculo del perímetro: (2*LADO)+(2*BASE)
+    MOV AX, ladoParalelogramo
+    ADD AX, AX
+    MOV BX, baseParalelogramo
+    ADD BX, BX
+    ADD AX, BX
+    MOV perimeter, AX
+
+    ; Cálculo del área: BASE * ALTURA
+    MOV AX, baseParalelogramo
+    MUL alturaParalelogramo
+    MOV WORD PTR [area], AX
+    MOV WORD PTR [area+2], DX
+
+    JMP DISPLAY_RESULTS
+
+DISPLAY_RESULTS:
+    LEA DX, msgArea
+    MOV AH, 09H
+    INT 21H        ; Muestra el mensaje "El área es:"
+
+    MOV AX, WORD PTR [area]
+    MOV DX, WORD PTR [area+2]
+    CALL PARSE32   ; Convierte el valor del área a cadena para mostrarlo
+    LEA DX, string1
+    CALL PRINTOUT  ; Muestra el valor del área
+
+    LEA DX, msgPerimeter
+    MOV AH, 09H
+    INT 21H        ; Muestra el mensaje "El perímetro es:"
+
+    MOV AX, perimeter
+    XOR DX, DX
+    CALL PARSE32   ; Convierte el valor del perímetro a cadena para mostrarlo
+    LEA DX, string1
+    CALL PRINTOUT  ; Muestra el valor del perímetro
+
+PREGUNTAR_CONTINUAR:
+    LEA DX, msgContinue
+    MOV AH, 09H
+    INT 21H        ; Pregunta si el usuario quiere continuar o salir
+
+LEER_OPCION:
+    MOV AH, 01H
+    INT 21H        ; Lee la opción del usuario
+    SUB AL, '0'    ; Convierte el carácter a número
+
+    CMP AL, 1
+    JE CONTINUAR_PROGRAMA ; Si elige continuar, vuelve a la selección de figura
+    CMP AL, 2
+    JE SALIR_PROGRAMA     ; Si elige salir, termina el programa
+    
+    LEA DX, msgInvalid
+    MOV AH, 09H
+    INT 21H       ; Si no es ninguna opción válida, muestra error
+    JMP PREGUNTAR_CONTINUAR ; Vuelve a preguntar
+
+CONTINUAR_PROGRAMA:
+    JMP SELECCIONAR_FIGURA ; Vuelve a la selección de figura
+
+SALIR_PROGRAMA:
+    MOV AH, 4CH
+    INT 21H       ; Termina el programa
+
+; Rutina para leer un número de la entrada
+READ_NUMBER_NEW PROC
+    XOR BX, BX    ; Inicializa BX en 0
+    MOV CX, 10    ; Inicializa el multiplicador en 10
+
+READ_LOOP_NEW:
+    MOV AH, 01H
+    INT 21H        ; Lee un carácter
+    CMP AL, 0Dh
+    JE END_READ_LOOP_NEW ; Si es Enter, termina la lectura
+    CMP AL, '0'
+    JL INVALID_INPUT_NUM ; Si no es un dígito, es entrada inválida
+    CMP AL, '9'
+    JG INVALID_INPUT_NUM ; Si no es un dígito, es entrada inválida
+    SUB AL, '0'    ; Convierte el carácter a número
+    MOV AH, 0
+    PUSH AX
+    MOV AX, BX
+    MUL CX        ; Multiplica BX por 10 (shifting)
+    JC OVERFLOW_NUM ; Verifica overflow
+    MOV BX, AX
+    POP AX
+    ADD BX, AX    ; Agrega el dígito a BX
+    JC OVERFLOW_NUM ; Verifica overflow
+    JMP READ_LOOP_NEW ; Continúa leyendo dígitos
+
+INVALID_INPUT_NUM:
+    JMP READ_LOOP_NEW ; Ignora entrada inválida y continúa
+
+OVERFLOW_NUM:
+    MOV BX, 9999  ; Si hay overflow, limita a 9999
+
+END_READ_LOOP_NEW:
+    MOV AX, BX    ; Retorna el número leído en AX
+    RET
+READ_NUMBER_NEW ENDP
+
+; Rutina para convertir un número de 32 bits a cadena para mostrar
+PARSE32 PROC
+    PUSH BX
+    PUSH CX
+    PUSH SI
+    MOV SI, 9
+    MOV BX, 10
+    MOV CX, 0
+
+PARSE32_LOOP:
+    PUSH AX
+    MOV AX, DX
+    XOR DX, DX
+    DIV BX         ; Divide DX:AX por 10
+    MOV DI, AX
+    POP AX
+    DIV BX         ; Divide AX por 10
+    ADD DL, '0'    ; Convierte el residuo a carácter
+    MOV [string1+SI], DL
+    DEC SI
+    INC CX
+    MOV DX, DI     ; Pasa la parte alta de la división a DX
+    CMP AX, 0
+    JNZ PARSE32_LOOP ; Continua hasta que AX sea 0
+    CMP DX, 0
+    JNZ PARSE32_LOOP ; Continua hasta que DX sea 0
+
+    MOV AL, ' '
+FILL_SPACES:
+    CMP SI, -1
+    JE DONE_PARSING ; Si ya llenamos la cadena, terminamos
+    MOV [string1+SI], AL
+    DEC SI
+    JMP FILL_SPACES
+
+DONE_PARSING:
+    POP SI
+    POP CX
+    POP BX
+    RET
+PARSE32 ENDP
+
+; Rutina para mostrar la cadena generada
+PRINTOUT PROC
+    MOV AH, 09H
+    INT 21H
+    RET
+PRINTOUT ENDP
+
+END START ; Fin del programa, punto de entrada es START
