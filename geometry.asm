@@ -47,6 +47,7 @@
 
     ; Variables para almacenar los valores de entrada y los resultados
     intValue DW 0
+    floatValue DW 0
     largo DW 0
     ancho DW 0
     base DW 0
@@ -66,7 +67,9 @@
     ladoParalelogramo DW 0
     baseParalelogramo DW 0
     area DD 0        ; Área se almacena en un doble palabra para manejar números grandes
+    areaFloat DW 0
     perimeter DW 0   ; Perímetro en una palabra
+    perimeterFloat DW 0
     string1 DB 10 DUP(' '), '$' ; Cadena temporal para mostrar los números
 
 .CODE
@@ -147,19 +150,43 @@ CALC_CUADRADO:
     INT 21H
 
     CALL READ_NUMBER_NEW
-    MOV intValue, AX
+    MOV floatValue,DX
+    XOR DX,DX
 
     CMP intValue, 0
     JLE INVALID_OPTION
     CMP intValue, 9999
     JG INVALID_OPTION
+    ;area si hay dec *****************************
+    ;Calculo enteros/////////////////
 
     MOV AX, intValue
     MOV BX, AX
     MUL BX
     MOV WORD PTR [area], AX
     MOV WORD PTR [area+2], DX
+    ;//////////////////////////
+ 
+    ;Calculo entero*dec /////////////
+    
+    MOV AX,intValue
+    MOV BX,floatValue
+    MUL BX
+    MOV BX,50
+    DIV BX
+    MOV BX,AX
+    MOV AX,DX ;Parte decimal a ax
+    MOV CX,200
+    MUL CX
+    ADD WORD PTR [area], BX ; Parte entera se suma 
+    ADD areaFloat,AX ;parte decimal se suma
+    ;/////////////////////////////////  
 
+    ; Calculando dec*dec////////////
+    MOV AX,floatValue 
+    MUL AX
+    ADD areaFloat,AX
+    ;///////////////////////////////////////
     MOV AX, intValue
     ADD AX, AX
     ADD AX, AX
@@ -562,38 +589,80 @@ SALIR_PROGRAMA:
 
 ; Rutina para leer un número de la entrada
 READ_NUMBER_NEW PROC
-    XOR BX, BX    ; Inicializa BX en 0
-    MOV CX, 10    ; Inicializa el multiplicador en 10
+    XOR BX, BX        ; Inicializa BX en 0 para acumular la parte entera
+    MOV CX, 10        ; Inicializa el multiplicador en 10
+    XOR DX, DX        ; Inicializa DX en 0 para acumular la parte decimal
+    XOR SI, SI        ; Inicializa SI para contar los decimales
 
 READ_LOOP_NEW:
     MOV AH, 01H
-    INT 21H        ; Lee un carácter
+    INT 21H            ; Lee un carácter
+    CMP AL, 0Dh
+    JE END_READ_LOOP_NEW ; Si es Enter, termina la lectura
+    CMP AL, '.'        ;Verifica si es un punto 
+    JE HANDLE_DECIMAL  
+    CMP AL, '0'
+    JL INVALID_INPUT_NUM ; Si no es un dígito, es entrada inválida
+    CMP AL, '9'
+    JG INVALID_INPUT_NUM ; Si no es un dígito, es entrada inválida
+    SUB AL, '0'        ; Convierte el carácter a número
+    MOV AH, 0
+    PUSH AX
+    MOV AX, BX
+    MUL CX             ; Multiplica BX por 10 (shifting)
+    JC OVERFLOW_NUM    ; Verifica overflow
+    MOV BX, AX
+    POP AX
+    ADD BX, AX         ; Agrega el dígito a BX
+    JC OVERFLOW_NUM    ; Verifica overflow
+    JMP READ_LOOP_NEW  ; Continúa leyendo dígitos
+HANDLE_DECIMAL:
+    ; Comienza a manejar la parte decimal
+    MOV AH, 01H
+    INT 21H            ; Lee el siguiente carácter (primer decimal)
+    CMP AL, 0Dh
+    JE HANDLE_SINGLE_DECIMAL ; Si es Enter, maneja un solo decimal
+    CMP AL, '0'
+    JL INVALID_INPUT_NUM ; Si no es un dígito, es entrada inválida
+    CMP AL, '9'
+    JG INVALID_INPUT_NUM ; Si no es un dígito, es entrada inválida
+    SUB AL, '0'        
+    MOV AH, 0
+    MOV CX, 10         
+    MUL CX             
+    ADD DX, AX        
+    INC SI    ; Incrementa el contador 
+
+    ; Lee el segundo 
+    MOV AH, 01H
+    INT 21H            
     CMP AL, 0Dh
     JE END_READ_LOOP_NEW ; Si es Enter, termina la lectura
     CMP AL, '0'
     JL INVALID_INPUT_NUM ; Si no es un dígito, es entrada inválida
     CMP AL, '9'
     JG INVALID_INPUT_NUM ; Si no es un dígito, es entrada inválida
-    SUB AL, '0'    ; Convierte el carácter a número
+    SUB AL, '0'        
     MOV AH, 0
-    PUSH AX
-    MOV AX, BX
-    MUL CX        ; Multiplica BX por 10 (shifting)
-    JC OVERFLOW_NUM ; Verifica overflow
-    MOV BX, AX
-    POP AX
-    ADD BX, AX    ; Agrega el dígito a BX
-    JC OVERFLOW_NUM ; Verifica overflow
-    JMP READ_LOOP_NEW ; Continúa leyendo dígitos
+    ADD DX, AX         ; Agrega el segundo decimal a DX
+    JMP END_READ_LOOP_NEW
 
+HANDLE_SINGLE_DECIMAL:
+    ; Agrega 0
+    MOV CX, 10         
+    MUL CX             
+    ADD DX, AX         ; Agrega el 0 adicional
 INVALID_INPUT_NUM:
     JMP READ_LOOP_NEW ; Ignora entrada inválida y continúa
+
 
 OVERFLOW_NUM:
     MOV BX, 9999  ; Si hay overflow, limita a 9999
 
 END_READ_LOOP_NEW:
     MOV AX, BX    ; Retorna el número leído en AX
+    MOV intValue,AX
+
     RET
 READ_NUMBER_NEW ENDP
 
