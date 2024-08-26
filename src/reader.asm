@@ -33,8 +33,8 @@ main proc
     call ConvertToFloat
 
     mov ax, parte_entera
-    sub ax, parte_decimal
-    cmp ax, 10  ; Comparacion de prueba
+    ; sub ax, parte_decimal
+    cmp ax, 5  ; Comparacion de prueba
         jnz skip
 
     xor ax, ax
@@ -58,12 +58,13 @@ ConvertToFloat proc
 
     cmp dl, 0
         jz buffer_end
+    xor dx, dx
 
     mov ax, 0
     mov bl, 10
     jmp buffer_integer_loop
 
-buffer_integer_loop:
+buffer_integer_loop:    ; Procesar parte entera
     mov cl, [si]
     cmp cl, '.'
         je buffer_integer_end  ; Si encontramos un punto decimal, procesar la parte decimal
@@ -76,20 +77,20 @@ buffer_integer_loop:
 
     mul bl             ; Multiplicar por 10 los digitos convertidos, los mueve una posicion a la derecha
     add ax, cx         ; Añadir el nuevo digito
+    mov dx, ax
     inc si   ; Mover el puntero lectura
     jmp buffer_integer_loop
 
 buffer_integer_end:
-    ; Procesar la parte decimal
-    mov parte_entera, ax
     mov ax, 0
     inc si
-buffer_float_loop:
+
+buffer_float_loop:     ; Procesar la parte decimal
     mov cl, [si]
     cmp cl, 0Dh
-        je buffer_end
+        je buffer_float_end
     cmp cl, 0Ah
-        je buffer_end
+        je buffer_float_end
     sub cl, '0'
     xor ch, ch
     
@@ -98,13 +99,14 @@ buffer_float_loop:
     inc si
     jmp buffer_float_loop
 
-buffer_end:
+buffer_float_end:
     mov parte_decimal, ax
+buffer_end:
+    mov parte_entera, dx
     xor ax, ax
     xor bx, bx
     xor cx, cx
     xor dx, dx
-
     ret
 ConvertToFloat endp
 

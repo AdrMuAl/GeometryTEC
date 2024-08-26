@@ -4,12 +4,12 @@
 .MODEL SMALL
 .STACK 100H
 .data   ; Seccion de inicializacion de datos (variables)
-    sit db 4    ; Esta 'variable' en memoria almacena la operacion a evaluar
+    sit db 3    ; Esta 'variable' en memoria almacena la operacion a evaluar
 
     ; >> Variables para operaciones aritmeticas con flotantes <<
-    param1 dw 1 , 89 ; arreglo de enteros (16-bits c/a) para partes de un flotante
+    param1 dw 5 , 9 ; arreglo de enteros (16-bits c/a) para partes de un flotante
     ;       ^INT1,^FLT1 => para indexar se multiplica el indice por 2 (bytes)
-    param2 dw 2 , 32 ; arreglo de enteros (16-bits c/a) para partes de un flotante
+    param2 dw 4 , 0 ; arreglo de enteros (16-bits c/a) para partes de un flotante
     ;       ^INT2,^FLT2
     result dw 0 , 0 ; arreglo de enteros (16-bits c/a) para resultado de operacion entre flotantes
     ;       ^INT,^FLT
@@ -259,48 +259,47 @@
     ; ---------------------------|'parse(int[BX],flt[AX])'|---------------------------
     parse: ; esta 'funcion' permite convertir el resultado de la operacion al 'string'
         mov si, 8 ; Indice de 'numstr' donde se debe comenzar a escribir los flotantes
-        mov cl, 10  ; El valor de 10, permitir aislar uno los digitos de un numero, este aislamiento es el residuo de la division
+        mov cx, 10  ; El valor de 10, permitir aislar uno los digitos de un numero, este aislamiento es el residuo de la division
 
         parse_float: ; Funcion recursiva
             ; (Caso base)
-            cmp al, 0; Verificar que ya no queden digitos distintos de cero por escribir
-            jz parse_midpoint
+            cmp ax, 0; Verificar que ya no queden digitos distintos de cero por escribir
+                jz parse_midpoint
             ; (Operaciones)
             dec si  ; decremento en indice para colocarse en la posicion adecuada
-            div cl ; Division entre 10, para aislar el ultimo digito
-            add ah, 30h ; convertir el digito aislado(residuo de div en DX) a ASCII
-            mov [num_str1+si], ah  ; mover a la posicion indexada el numero ASCII
+            div cx ; Division entre 10, para aislar el ultimo digito
+            add dl, 30h ; convertir el digito aislado(residuo de div en DX) a ASCII
+            mov [num_str1+si], dl  ; mover a la posicion indexada el numero ASCII
             ; (Limpieza de registros)
-            mov ah, 0
+            xor dx, dx
             ; (Llamada recursiva)
             jmp parse_float
 
         parse_midpoint: ; Punto intermedio entre conversion de partes
             mov si, 5   ; Mover el indice al inicio de los digitos de la parte entera
             mov ax, bx  ; Mover la parte entera al registro AX para poder aislar los digitos 
-            mov bx, 0   ; Limpiar el registro que ya no se esta usado
-            mov dx, 0
+            xor bx, bx   ; Limpiar el registro que ya no se esta usado
+            xor dx, dx
 
         parse_integer: ; Funcion recursiva
             ; (Caso base)
-            cmp al, 0; Verificar que ya no queden digitos distintos de cero por escribir
-            jz parse_endpoint
+            cmp ax, 0; Verificar que ya no queden digitos distintos de cero por escribir
+                jz parse_endpoint
             ; (Operaciones)
             dec si  ; decremento en indice para colocarse en la posicion adecuada
-            div cl  ; Division entre 10, para aislar el ultimo digito
-            add ah, 30h ; convertir el digito aislado(residuo de div en DX) a ASCII
-            mov [num_str1+si], ah   ; mover a la posicion indexada el numero ASCII
+            div cx  ; Division entre 10, para aislar el ultimo digito
+            add dl, 30h ; convertir el digito aislado(residuo de div en DX) a ASCII
+            mov [num_str1+si], dl   ; mover a la posicion indexada el numero ASCII
             ; (Limpieza de registros)
-            mov ah, 0
+            xor dx, dx
             ; (Llamada recursiva)
             jmp parse_integer
         
         parse_endpoint: ; Punto final de conversion (Limpia los registros usados)
-            mov ax, 0
-            mov bx, 0
-            mov cx, 0
-            mov dx, 0
-
+            xor ax, ax
+            xor bx, bx
+            xor cx, cx 
+            xor dx, dx
         ret
     ; -----------------------------|'printout(num[&DX])'|-----------------------------
     printout:
