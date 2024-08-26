@@ -4,12 +4,12 @@
 .MODEL SMALL
 .STACK 100H
 .data   ; Seccion de inicializacion de datos (variables)
-    sit db 3    ; Esta 'variable' en memoria almacena la operacion a evaluar
+    sit db 4    ; Esta 'variable' en memoria almacena la operacion a evaluar
 
     ; >> Variables para operaciones aritmeticas con flotantes <<
-    param1 dw 3 , 70 ; arreglo de enteros (16-bits c/a) para partes de un flotante
+    param1 dw 1 , 89 ; arreglo de enteros (16-bits c/a) para partes de un flotante
     ;       ^INT1,^FLT1 => para indexar se multiplica el indice por 2 (bytes)
-    param2 dw 2 , 17 ; arreglo de enteros (16-bits c/a) para partes de un flotante
+    param2 dw 2 , 32 ; arreglo de enteros (16-bits c/a) para partes de un flotante
     ;       ^INT2,^FLT2
     result dw 0 , 0 ; arreglo de enteros (16-bits c/a) para resultado de operacion entre flotantes
     ;       ^INT,^FLT
@@ -111,7 +111,7 @@
         ; (b)[Limpiar registros]
             xor ax, ax
             xor bx, bx
-            mov dx, dx
+            xor dx, dx
         ret
     ; -----------------------------|'mult()'|-----------------------------
     multiply: ; [INT1*INT2]+[(INT1*FLT2)/100]+[(INT2*FLT1)/100]+[(FLT1*FLT2)/100^2]
