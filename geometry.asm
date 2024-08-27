@@ -60,6 +60,8 @@
     altura DW 0
     alturaFloat DW 0
 
+
+    X DW 0
     ladoRombo DW 0
     ladoRomboFloat DW 0 
 
@@ -413,19 +415,18 @@ CALC_TRI_AREA:
     DIV BX
     MOV base, AX ; NUEVA BASE 
     MOV AX,DX ;residuo a AX
+    MOV CX,5000
+    MUL CX
+    MOV DX,baseFloat ; SE PONE  PArTE FLOTANTE EN DX
+    MOV baseFloat,AX ; nueva parte flotante
+    MOV AX,DX 
     MOV CX,100
     MUL CX
-    DIV BX
-    MOV BX,AX
-    MOV AX,baseFloat ; SE PONE  PArTE FLOTANTE EN AX
     MOV CX,2 
     XOR DX,DX
     DIV CX 
-    MOV CX,1
-    MUL CX
+    ADD baseFloat, AX
 
-    ADD AX,BX
-    MOV baseFloat, AX ; Se suma el resultado de dividir entre dos la parte flotante original y la resultante de la division de la parte entera
 
 
     ;Int*int
@@ -436,17 +437,37 @@ CALC_TRI_AREA:
 
     ;////////////// intLargo*FloatAncho
     ;*****************************************
+    MOV AX, baseFloat
+    MOV CX,100
+    DIV CX
+    MOV x,DX
+    MOV BX,AX
     MOV AX,altura
-    MOV BX,baseFloat
     MUL BX
     MOV BX,100 ; para separar parte entera y decimal
     DIV BX
-    MOV BX,AX ; int a bx
+    ADD WORD PTR [area], AX ; Parte entera se suma 
     MOV AX,DX ;Parte decimal a ax
     MOV CX,100  ;
     MUL CX
-    ADD WORD PTR [area], BX ; Parte entera se suma 
     ADD areaFloat,AX ;parte decimal se suma
+
+    MOV AX,X
+    MOV BX, altura
+    MUL BX
+    MOV CX, 10000
+    DIV CX ; YA QUE ERA 0.00X
+    ADD WORD PTR [area], AX ; Parte entera se suma 
+    MOV AX,DX
+    ADD AX,areaFloat
+    XOR DX,DX
+    MOV BX,10000 ; PARA VER SI HAY PARTE ENTERA
+    DIV BX
+    ADD WORD PTR [area], AX ; Parte entera se suma 
+    MOV areaFloat,DX
+
+
+
 
 
     ;////////////// intAncho*FloatLargo
@@ -472,6 +493,9 @@ CALC_TRI_AREA:
 
     ; Calculando dec*dec////////////
     MOV AX,baseFloat
+    MOV CX,100
+    XOR DX,DX
+    DIV CX
     MOV BX,alturaFloat
     MUL BX
     MOV DX,areaFloat
