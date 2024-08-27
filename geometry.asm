@@ -228,10 +228,10 @@ CALC_CUADRADO:
     MOV DX,areaFloat
     ADD AX,DX
     XOR DX,DX
-    MOV BX,10000 ; PARA VER SI HAY PARTE ENTERA
+    MOV BX,10000 ; PARA VER SI HAY PARTE ENTERA y evitar acarreo
     DIV BX
     ADD WORD PTR [area], AX ; Parte entera se suma 
-    MOV areaFloat,DX
+    MOV areaFloat,DX 
     ;***************************************************
     ;perimetro si hay dec  
     ;Calculo enteros/////////////////
@@ -285,12 +285,14 @@ CALC_RECTANGULO:
     JG INVALID_INPUT_RECT
     JMP CALC_RECT_AREA
 
+
+
 INVALID_INPUT_RECT:
     JMP INVALID_OPTION
 
 CALC_RECT_AREA:
     ;area******************************
-    ;
+    ;Int*int
     MOV AX, largo
     MUL ancho
     MOV WORD PTR [area], AX
@@ -323,16 +325,26 @@ CALC_RECT_AREA:
     MOV CX,100  ;
     MUL CX
     ADD WORD PTR [area], BX ; Parte entera se suma 
-    ADD areaFloat,AX ;parte decimal se suma
-    
-    
 
+    MOV DX,areaFloat
+    ADD AX,DX
+    XOR DX,DX
+    MOV BX,10000 ; PARA VER SI HAY PARTE ENTERA
+    DIV BX
+    ADD WORD PTR [area], AX ; Parte entera se suma 
+    MOV areaFloat,DX
 
     ; Calculando dec*dec////////////
     MOV AX,anchoFloat
     MOV BX,largoFloat
     MUL BX
-    ADD areaFloat,AX
+    MOV DX,areaFloat
+    ADD AX,DX
+    XOR DX,DX
+    MOV BX,10000 ; PARA VER SI HAY PARTE ENTERA
+    DIV BX
+    ADD WORD PTR [area], AX ; Parte entera se suma 
+    MOV areaFloat,DX
     
     
     ;perimetro************************************
@@ -354,6 +366,7 @@ CALC_RECT_AREA:
     MOV AX, anchoFloat
     ADD AX,AX 
     ADD AX,BX ;se suman largos y anchos
+    XOR DX,DX
     MOV BX,100 
     DIV BX ;separar int y float
     ADD perimeterFloat,DX
