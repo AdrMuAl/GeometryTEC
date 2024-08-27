@@ -5,11 +5,10 @@ ___
 El programa consiste en una interfaz basica en ensamblador 8086 (16 bits) para hacer el calculo de distintas areas y perimetros de figuras geometricas basicas. Se enfoca principalmente en la manipulacion de registros y datos de manera adecuada. 
 
 ### Objetivos:
-- **Principal**: Desarrollar una aplicacion que permita reafirmar el conocimiento del lenguaje ensamblador 8086
-- Utilizar las instrucciones de impresion en pantalla
-- Hacer uso de las instrucciones de lectura del teclado
-- Implementar las operaciones matematicas basicas
-- Manipular los registros provistos por el ensamblador 8086
+- **Principal**: Desarrollar una aplicacion de precision que permita el calculo de area y perimetro de figuras geometricas con numeros de punto fijo
+- Implementar algoritmos que utilizan aritmetica de numeros flotantes
+- Crear un software que pueda solicitar y verificar entradas del usuario
+- Estructurar el codigo fuente y documentacion interna de manera que sea facil mantener y modificar a largo plazo
 
 ### Especificaciones:
 - Sistemas operativos probados: Ubuntu (Linux)
