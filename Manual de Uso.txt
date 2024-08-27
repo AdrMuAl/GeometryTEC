@@ -31,7 +31,6 @@
         - (Dosbox): tlink .\path\to\file
     * note que el archivo compilado se llama 'file' (sin la extension .asm)
 
-
 * El codigo fuente puede ser editado desde cualquier editor de texto o IDE, el emulador solo nos permite poder compilar
 y ejecutar el programa usando arquitectura de 16 bits *
 
@@ -45,3 +44,36 @@ y ejecutar el programa usando arquitectura de 16 bits *
 
     3. Salir del emulador:
         - (Dosbox): exit
+
+>>> Uso del programa:
+    1. En en la bienvenida al programa, este solicita ingresar un numero del 1 al 9 para 
+        seleccionar.
+        - 1 para cuadrado
+        - 2 para rectangulo
+        - 3 para triangulo
+        - 4 para rombo
+        - 5 para pentagono
+        - 6 para hexagono
+        - 7 para circulo
+        - 8 para trapecio
+        - 9 para paralelogramo
+
+    2. Despues de seleccionar el la figura, el programa solicita el valor de ciertas 
+        medidas de la figura para calcular el perimetro y area.
+        - Recibe numeros enteros o un flotantes (separado con '.')
+            LIMITE: [9999] para enteros y [9999.99] para flotantes
+        - Cualquier otra entrada es rechazada y nuevamente vuelve a preguntar la medida
+
+    3. Despues de ingresar las medidas requeridas, el programa muestra en pantalla los valores
+        calculados para el area y el perimetro de la figura.
+
+    4. El programa indica si se quiere seguir o terminar la sesion (cerrar el programa). Nuevamente
+        solicita un entrada de un numero entre 1 y 2
+        - 1 para continuar
+        - 2 para salir
+
+    5. En caso de seleccionar 1, el programa vuelve a solictar la selecion de una figura.
+
+    6. En caso de seleccionar 2, el programa finaliza el proceso y redirecciona nuevamente 
+        a la terminal.
+    
