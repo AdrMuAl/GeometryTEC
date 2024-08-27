@@ -379,13 +379,17 @@ CALC_TRIANGULO:
     MOV AH, 09H
     INT 21H
     CALL READ_NUMBER_NEW
-    MOV base, AX
+    MOV baseFloat, DX
+    MOV AX, intValue
+    MOV base,AX
 
     LEA DX, promptAltura
     MOV AH, 09H
     INT 21H
     CALL READ_NUMBER_NEW
-    MOV altura, AX
+    MOV alturaFloat, DX
+    MOV AX, intValue
+    MOV altura,AX
 
     CMP base, 0
     JLE INVALID_INPUT_TRI
@@ -401,17 +405,111 @@ INVALID_INPUT_TRI:
     JMP INVALID_OPTION
 
 CALC_TRI_AREA:
+    ;area***********************************
+    ;div/2////////////////
     MOV AX, base
-    MUL altura
+    XOR DX,DX
     MOV BX, 2
     DIV BX
-    MOV WORD PTR [area], AX
-    MOV WORD PTR [area+2], 0
+    MOV base, AX ; NUEVA BASE 
+    MOV AX,DX ;residuo a AX
+    MOV CX,100
+    MUL CX
+    DIV BX
+    MOV BX,AX
+    MOV AX,baseFloat ; SE PONE  PArTE FLOTANTE EN AX
+    MOV CX,2 
+    XOR DX,DX
+    DIV CX 
+    MOV CX,1
+    MUL CX
 
+    ADD AX,BX
+    MOV baseFloat, AX ; Se suma el resultado de dividir entre dos la parte flotante original y la resultante de la division de la parte entera
+
+
+    ;Int*int
+    MOV AX, altura
+    MUL base
+    MOV WORD PTR [area], AX
+    MOV WORD PTR [area+2], DX
+
+    ;////////////// intLargo*FloatAncho
+    ;*****************************************
+    MOV AX,altura
+    MOV BX,baseFloat
+    MUL BX
+    MOV BX,100 ; para separar parte entera y decimal
+    DIV BX
+    MOV BX,AX ; int a bx
+    MOV AX,DX ;Parte decimal a ax
+    MOV CX,100  ;
+    MUL CX
+    ADD WORD PTR [area], BX ; Parte entera se suma 
+    ADD areaFloat,AX ;parte decimal se suma
+
+
+    ;////////////// intAncho*FloatLargo
+    ;*****************************************
+    MOV AX,base
+    MOV BX,alturaFloat
+    MUL BX
+    MOV BX,100 ; para separar parte entera y decimal
+    DIV BX
+    MOV BX,AX ; int a bx
+    MOV AX,DX ;Parte decimal a ax
+    MOV CX,100  ;
+    MUL CX
+    ADD WORD PTR [area], BX ; Parte entera se suma 
+
+    MOV DX,areaFloat
+    ADD AX,DX
+    XOR DX,DX
+    MOV BX,10000 ; PARA VER SI HAY PARTE ENTERA
+    DIV BX
+    ADD WORD PTR [area], AX ; Parte entera se suma 
+    MOV areaFloat,DX
+
+    ; Calculando dec*dec////////////
+    MOV AX,baseFloat
+    MOV BX,alturaFloat
+    MUL BX
+    MOV DX,areaFloat
+    ADD AX,DX
+    XOR DX,DX
+    MOV BX,10000 ; PARA VER SI HAY PARTE ENTERA
+    DIV BX
+    ADD WORD PTR [area], AX ; Parte entera se suma 
+    MOV areaFloat,DX
+    
+    
+    
+    ;perimetro************************************
+
+    ;parte entera/////////////////////////
     MOV AX, base
     MOV BX, 3
     MUL BX
     MOV perimeter, AX
+
+    ;decimales
+
+
+    MOV AX, baseFloat
+    MOV BX, 3
+    MUL BX
+    XOR DX,DX
+    MOV BX,100 
+    DIV BX ;separar int y float
+    ADD perimeterFloat,DX
+    ADD perimeter, AX
+
+    JMP DISPLAY_RESULTS
+
+    ;   
+
+
+
 
     JMP DISPLAY_RESULTS
 
