@@ -158,7 +158,7 @@ CALC_CUADRADO:
     CMP intValue, 9999
     JG INVALID_OPTION
     ;area si hay dec *****************************
-    ;Calculo enteros/////////////////
+    ;Calculo entero*entero/////////////////
 
     MOV AX, intValue
     MOV BX, AX
@@ -172,11 +172,11 @@ CALC_CUADRADO:
     MOV AX,intValue
     MOV BX,floatValue
     MUL BX
-    MOV BX,50
+    MOV BX,50 ; para separar parte entera y decimal
     DIV BX
-    MOV BX,AX
+    MOV BX,AX ; int a bx
     MOV AX,DX ;Parte decimal a ax
-    MOV CX,200
+    MOV CX,200  
     MUL CX
     ADD WORD PTR [area], BX ; Parte entera se suma 
     ADD areaFloat,AX ;parte decimal se suma
@@ -186,12 +186,28 @@ CALC_CUADRADO:
     MOV AX,floatValue 
     MUL AX
     ADD areaFloat,AX
-    ;///////////////////////////////////////
+    ;***************************************************
+    ;perimetro si hay dec  
+    ;Calculo enteros/////////////////
+
     MOV AX, intValue
     ADD AX, AX
     ADD AX, AX
     MOV perimeter, AX
+    
+    
+    ; decimales//////////////////
 
+    MOV AX ,floatValue
+    ADD AX, AX
+    ADD AX,AX
+    MOV BX,100
+    DIV BX
+    ADD perimeterFloat,DX
+    ADD perimeter, AX 
+
+
+    ;*************************************************************
     JMP DISPLAY_RESULTS
 
 CALC_RECTANGULO:
