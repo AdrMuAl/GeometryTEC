@@ -49,23 +49,59 @@
     intValue DW 0
     floatValue DW 0
     largo DW 0
+    largoFloat DW 0
+
     ancho DW 0
+    anchoFloat DW 0
+
     base DW 0
+    baseFloat DW 0 
+
     altura DW 0
+    alturaFloat DW 0
+
     ladoRombo DW 0
+    ladoRomboFloat DW 0 
+
     diagonalMayor DW 0
+    diagonalMayorFloat DW 0
+
     diagonalMenor DW 0
+    diagonalMenorFloat DW 0
+
     ladoPentagono DW 0
+    ladoPentagonoFloat DW 0
+
     apotema DW 0
+    apotemaFloat DW 0
+
     ladoHexagono DW 0
+    ladoHexagonoFloat DW 0
+
     apotemaHexagono DW 0
+    apotemaHexagonoFloat DW 0
+
     alturaTrapecio DW 0
+    alturaTrapecioFloat DW 0
+
     baseMayorTrapecio DW 0
+    baseMayorTrapecioFloat DW 0
+
     baseMenorTrapecio DW 0
+    baseMenorTrapecioFloat DW 0
+
     ladoMenorTrapecio DW 0
+    ladoMenorTrapecioFloat DW 0
+
     alturaParalelogramo DW 0
+    alturaParalelogramoFloat DW 0
+
     ladoParalelogramo DW 0
+    ladoParalelogramoFloat DW 0 
+
     baseParalelogramo DW 0
+    baseParalelogramoFloat DW 0
+
     area DD 0        ; Área se almacena en un doble palabra para manejar números grandes
     areaFloat DW 0
     perimeter DW 0   ; Perímetro en una palabra
@@ -176,16 +212,26 @@ CALC_CUADRADO:
     DIV BX
     MOV BX,AX ; int a bx
     MOV AX,DX ;Parte decimal a ax
-    MOV CX,200  
+    MOV CX,200  ;
     MUL CX
     ADD WORD PTR [area], BX ; Parte entera se suma 
+    
     ADD areaFloat,AX ;parte decimal se suma
     ;/////////////////////////////////  
+
+    
+
 
     ; Calculando dec*dec////////////
     MOV AX,floatValue 
     MUL AX
-    ADD areaFloat,AX
+    MOV DX,areaFloat
+    ADD AX,DX
+    XOR DX,DX
+    MOV BX,10000 ; PARA VER SI HAY PARTE ENTERA
+    DIV BX
+    ADD WORD PTR [area], AX ; Parte entera se suma 
+    MOV areaFloat,DX
     ;***************************************************
     ;perimetro si hay dec  
     ;Calculo enteros/////////////////
@@ -201,7 +247,9 @@ CALC_CUADRADO:
     MOV AX ,floatValue
     ADD AX, AX
     ADD AX,AX
-    MOV BX,100
+    XOR BX,BX
+    XOR DX,DX 
+    MOV BX,100 ;PARA SEPARAR INT Y FLOAT
     DIV BX
     ADD perimeterFloat,DX
     ADD perimeter, AX 
@@ -215,12 +263,16 @@ CALC_RECTANGULO:
     MOV AH, 09H
     INT 21H
     CALL READ_NUMBER_NEW
+    MOV largoFloat,DX
+    MOV AX, intValue
     MOV largo, AX
 
     LEA DX, promptAncho
     MOV AH, 09H
     INT 21H
     CALL READ_NUMBER_NEW
+    MOV anchoFloat,DX
+    MOV AX, intValue
     MOV ancho, AX
 
     CMP largo, 0
@@ -237,17 +289,75 @@ INVALID_INPUT_RECT:
     JMP INVALID_OPTION
 
 CALC_RECT_AREA:
+    ;area******************************
+    ;
     MOV AX, largo
     MUL ancho
     MOV WORD PTR [area], AX
     MOV WORD PTR [area+2], DX
 
+    ;////////////// intLargo*FloatAncho
+    ;*****************************************
+    MOV AX,largo
+    MOV BX,anchoFloat
+    MUL BX
+    MOV BX,100 ; para separar parte entera y decimal
+    DIV BX
+    MOV BX,AX ; int a bx
+    MOV AX,DX ;Parte decimal a ax
+    MOV CX,100  ;
+    MUL CX
+    ADD WORD PTR [area], BX ; Parte entera se suma 
+    ADD areaFloat,AX ;parte decimal se suma
+
+
+    ;////////////// intAncho*FloatLargo
+    ;*****************************************
+    MOV AX,ancho
+    MOV BX,largoFloat
+    MUL BX
+    MOV BX,100 ; para separar parte entera y decimal
+    DIV BX
+    MOV BX,AX ; int a bx
+    MOV AX,DX ;Parte decimal a ax
+    MOV CX,100  ;
+    MUL CX
+    ADD WORD PTR [area], BX ; Parte entera se suma 
+    ADD areaFloat,AX ;parte decimal se suma
+    
+    
+
+
+    ; Calculando dec*dec////////////
+    MOV AX,anchoFloat
+    MOV BX,largoFloat
+    MUL BX
+    ADD areaFloat,AX
+    
+    
+    ;perimetro************************************
+
+    ;parte entera/////////////////////////
     MOV AX, largo
     ADD AX, AX
     MOV BX, ancho
     ADD BX, BX
     ADD AX, BX
     MOV perimeter, AX
+
+    ;decimales
+
+
+    MOV AX ,largoFloat
+    ADD AX, AX
+    MOV BX,AX
+    MOV AX, anchoFloat
+    ADD AX,AX 
+    ADD AX,BX ;se suman largos y anchos
+    MOV BX,100 
+    DIV BX ;separar int y float
+    ADD perimeterFloat,DX
+    ADD perimeter, AX
 
     JMP DISPLAY_RESULTS
 
