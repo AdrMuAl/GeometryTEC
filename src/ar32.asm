@@ -3,9 +3,9 @@
 .model SMALL
 .stack 100H
 .DATA ; Seccion de inicializacion de datos
-    param1 DW 1, 1, 0 ; High:Low.Float
+    param1 DW 1, 0, 0 ; High:Low.Float
         ; bytes 1 a 4 el numero entero, mientras que los ultimos dos son la parte flotante
-    param2 DW 0, 2, 0  ; High:Low.Float
+    param2 DW 1, 0, 0  ; High:Low.Float
         ; de manera algebraica un numero de 32 bits se tal que [High](65535)+[Low]
         ; entonces los primeros 16 bits son un multiplicador y los otros 16 son el exceso
     result DW 0, 0, 0
