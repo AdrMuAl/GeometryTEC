@@ -3,9 +3,9 @@
 .model SMALL
 .stack 100H
 .DATA ; Seccion de inicializacion de datos
-    param1 DW 1, 5, 60 ; High:Low.Float
+    param1 DW 1, 1, 0 ; High:Low.Float
         ; bytes 1 a 4 el numero entero, mientras que los ultimos dos son la parte flotante
-    param2 DW 0, 2, 17  ; High:Low.Float
+    param2 DW 0, 2, 0  ; High:Low.Float
         ; de manera algebraica un numero de 32 bits se tal que [High](65535)+[Low]
         ; entonces los primeros 16 bits son un multiplicador y los otros 16 son el exceso
     result DW 0, 0, 0
@@ -27,7 +27,7 @@ START:
     MOV ds, ax  ; Inicializar la seccion de DATA
     XOR ax, ax
     ; Operaciones que queramos a hacer
-    CALL substract ; operacion 1
+    CALL multiply ; operacion 1
 
     LEA dx, [prompt]
     CALL PRINTOUT
@@ -142,6 +142,76 @@ START:
 ; (3)
     multiply proc  ; [INT1*INT2]+[(INT1*FLT2)/100]+[(INT2*FLT1)/100]+[(FLT1*FLT2)/100^2]
         ; (1)
+        ; partes altas
+        MOV ax, [param1]
+        MOV bx, [param2]
+        MUL bx
+
+        ADD [aux], dx
+        ADD [aux+2], ax
+
+        XOR ax, ax
+        XOR bx, bx
+
+        ; alto 1 y bajo 2
+        MOV ax, [param1]
+        MOV bx, [param2+2]
+        MUL bx
+
+        ADD [aux+2], ax
+        ADC [aux], dx
+
+        XOR ax, ax
+        XOR bx, bx
+
+        ; bajo 1 y alto 2
+        MOV ax, [param1+2]
+        MOV bx, [param2]
+        MUL bx
+
+        ADD [aux+2], ax
+        ADC [aux], dx
+
+        XOR ax, ax
+        XOR bx, bx
+
+        ; bajo 1 y bajo 2
+        MOV ax, [param1+2]
+        MOV bx, [param2+2]
+        MUL bx
+
+        ADD [aux+2], ax
+        ADC [aux], dx
+
+        XOR ax, ax
+        XOR bx, bx
+
+        MOV ax, [aux+2]
+        MOV [result+2], ax
+        MOV ax, [aux]
+        MOV [result], ax
+
+        XOR ax, ax
+        ; MOV ax, [param1+2]  ; 0
+        ; MOV dx, [param1]    ; DX:AX = INT1 1
+        
+        ; MOV bx, [param2+2]  ; 2
+        ; MOV cx, [param2]    ; CX:BX = INT2 0
+
+        ; MUL bx
+
+        ; MOV bx, ax
+        ; MOV ax, dx
+        ; MUL cx
+
+        ; ADD dx, bx
+
+        ; MOV ax, cx
+        ; MUL dx
+        ; ADD bx, dx
+
+        ; MOV [result+2], ax
+        ; MOV [result], dx
         ; (2)
         ; (3)
         ; (4)
