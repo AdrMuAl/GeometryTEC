@@ -493,9 +493,10 @@ CALC_TRI_AREA:
 
     ; Calculando dec*dec////////////
     MOV AX,baseFloat
-    MOV CX,100
+    MOV CX,100 ;Para evitar acarreo
     XOR DX,DX
     DIV CX
+    MOV x,DX ; Para manejar acarreo
     MOV BX,alturaFloat
     MUL BX
     MOV DX,areaFloat
@@ -505,6 +506,15 @@ CALC_TRI_AREA:
     DIV BX
     ADD WORD PTR [area], AX ; Parte entera se suma 
     MOV areaFloat,DX
+
+    ;Para manejar acarreo
+    MOV AX,X
+    MOV BX, alturaFloat
+    MUL BX
+    MOV CX, 100
+    XOR DX,DX
+    DIV CX ; YA QUE ERA 0.00X
+    ADD areaFloat,AX
     
     
     
