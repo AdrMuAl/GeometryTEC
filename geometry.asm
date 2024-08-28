@@ -42,8 +42,8 @@
     promptBaseParalelogramo DB 0Dh, 0Ah, 'Por favor ingrese la base del paralelogramo: $'
     
     ; Mensajes para mostrar los resultados
-    msgArea DB 'El area es: $'
-    msgPerimeter DB 'El perimetro es: $'
+    msgArea DB 0Dh, 0Ah, 'El area es: $'
+    msgPerimeter DB 0Dh, 0Ah, 'El perimetro es: $'
 
     ; Variables para almacenar los valores de entrada y los resultados
     intValue DW 0
@@ -109,18 +109,11 @@
     baseParalelogramo DW 0
     baseParalelogramoFloat DW 0
 
-    area DW 0, 0        ; Área se almacena en un doble palabra para manejar números grandes
+    area DD 0        ; Área se almacena en un doble palabra para manejar números grandes
     areaFloat DW 0
-
     perimeter DW 0   ; Perímetro en una palabra
     perimeterFloat DW 0
-
-    aux DW 0, 0, 0 ; Variable auxiliar para guardar resultados intermedios
-
     string1 DB 10 DUP(' '), '$' ; Cadena temporal para mostrar los números
-
-    num_string DB 10 DUP('0'), '.', 2 DUP('0'), '$'
-    crlf DB 0Dh, 0Ah, '$'   ; Carriage return & newline
 
 .CODE
 START:
@@ -506,7 +499,10 @@ CALC_TRI_AREA:
     XOR DX,DX
     DIV BX
     ADD WORD PTR [area], AX ; Parte entera se suma 
-    ADD areaFloat,DX ;parte decimal se suma
+    MOV AX,DX
+    MOV CX,100
+    MUL CX
+    ADD areaFloat,AX ;parte decimal se suma
 
     ;menos f sig por mas sig int
     MOV AX,intMasSIg
@@ -516,25 +512,25 @@ CALC_TRI_AREA:
     DIV BX
     ADD WORD PTR [area], AX ; Parte entera se suma 
 
-    MOV AX,areaFloat
-    ADD AX,DX
+    MOV AX,DX
+    MOV CX,100
+    MUL CX
+    ADD AX,areaFloat
     XOR DX,DX
     MOV BX,10000 ; PARA VER SI HAY PARTE ENTERA
     DIV BX
     ADD WORD PTR [area], AX ; Parte entera se suma 
     MOV areaFloat,DX
 
-    ADD areaFloat,DX ;parte decimal se suma
 
     ;Menos sig int y f
     ;Int menos significativo * float menos sig
-    MOV floatMenosSIg, BX
-    MOV intMenosSig,AX
+    MOV BX,floatMenosSIg
+    MOV AX,intMenosSig
     XOR DX,DX
     MUL BX
 
-    MOV DX,areaFloat
-    ADD AX,DX
+    ADD AX,areaFloat
     XOR DX,DX
     MOV BX,10000 ; PARA VER SI HAY PARTE ENTERA
     DIV BX
@@ -592,13 +588,13 @@ CALC_TRI_AREA:
     MOV CX, 100
     XOR DX,DX
     DIV CX ; YA QUE ERA 0.00X
+    ADD AX, areaFloat
     MOV BX,10000 ; PARA VER SI HAY PARTE ENTERA
     XOR DX,DX
     DIV BX
     ADD WORD PTR [area], AX ; Parte entera se suma 
     MOV areaFloat,DX
-    ADD areaFloat,AX
-    
+
     
 
 
@@ -610,6 +606,7 @@ CALC_ROMBO:
     MOV AH, 09H
     INT 21H
     CALL READ_NUMBER_NEW
+    MOV ladoRomboFloat, DX
     MOV AX, intValue
     MOV ladoRombo, AX
 
@@ -636,6 +633,33 @@ INVALID_INPUT_ROMBO:
     JMP INVALID_OPTION
 
 CALC_ROMBO_AREA:
+
+    ;perimetro************************************
+
+    ;perimetro si hay dec  
+    ;Calculo enteros/////////////////
+
+    MOV AX, ladoRombo
+    ADD AX, AX
+    ADD AX,AX
+    MOV perimeter, AX
+    
+    
+    ; decimales//////////////////
+
+    MOV AX ,ladoRomboFloat
+    ADD AX, AX
+    ADD AX,AX
+    XOR DX,DX 
+    MOV BX,100 ;PARA SEPARAR INT Y FLOAT
+    DIV BX
+    ADD perimeterFloat,DX
+    ADD perimeter, AX 
+
+
+
+
+
 ;area***********************************
     ;div/2////////////////
     MOV AX, base
@@ -795,12 +819,16 @@ CALC_PENTAGONO:
     MOV AH, 09H
     INT 21H
     CALL READ_NUMBER_NEW
+    MOV ladoPentagonoFloat,DX
+    MOV AX,intValue
     MOV ladoPentagono, AX
 
     LEA DX, promptApotema
     MOV AH, 09H
     INT 21H
     CALL READ_NUMBER_NEW
+    MOV apotemaFloat,DX
+    MOV AX,intValue
     MOV apotema, AX
 
     CMP ladoPentagono, 0
@@ -817,19 +845,176 @@ INVALID_INPUT_PENT:
     JMP INVALID_OPTION
 
 CALC_PENT_AREA:
-    ; Cálculo del perímetro: 5 * lado
+;perimetro************************************
+
+    ;perimetro si hay dec  
+    ;Calculo enteros/////////////////
+
     MOV AX, ladoPentagono
-    MOV BX, 5
+    MOV BX,5
     MUL BX
     MOV perimeter, AX
+    
+    
+    ; decimales//////////////////
 
-    ; Cálculo del área: (Perímetro * Apotema) / 2
-    MOV AX, perimeter
-    MUL apotema
+    MOV AX ,ladoPentagonoFloat
+    MOV BX,5
+    MUL BX
+    XOR DX,DX 
+    MOV BX,100 ;PARA SEPARAR INT Y FLOAT
+    DIV BX
+    ADD perimeterFloat,DX
+    ADD perimeter, AX 
+
+
+;area***********************************
+    ;div/2////////////////
+    MOV AX, apotema
+    XOR DX,DX
     MOV BX, 2
     DIV BX
+    MOV base, AX ; NUEVA BASE 
+    MOV AX,DX ;residuo a AX
+    MOV CX,5000
+    MUL CX
+    MOV DX,apotemaFloat ; SE PONE  PArTE FLOTANTE EN DX
+    MOV apotemaFloat,AX ; nueva parte flotante
+    MOV AX,DX 
+    MOV CX,100
+    MUL CX
+    MOV CX,2 
+    XOR DX,DX
+    DIV CX 
+    ADD apotemaFloat, AX
+
+
+
+    ;Int*int
+    MOV AX, perimeter
+    MUL apotema
     MOV WORD PTR [area], AX
     MOV WORD PTR [area+2], DX
+
+    ;////////////// intLargo*FloatAncho
+    ;*****************************************
+    ;Se separa flotante
+    MOV AX,apotemaFloat
+    MOV BX,100
+    XOR DX,DX
+    DIV BX
+    MOV floatMenosSig,DX
+    MOV floatMasSIg,AX
+    
+    ;Se separa entero
+    MOV AX, perimeter
+    XOR DX,DX
+    DIV BX
+    MOV intMenosSig, DX
+    MOV intMasSIg, AX
+    
+    ;Int mas significativo * float mas sig
+    MOV BX, floatMasSIg
+    XOR DX,DX
+    MUL BX
+    ADD WORD PTR [area], AX ; Parte entera se suma 
+
+
+    ;menos int sig por mas sig float 
+    MOV AX,floatMasSIg
+    MUL intMenosSig
+    MOV BX,100 ; para separar parte entera y decimal
+    XOR DX,DX
+    DIV BX
+    ADD WORD PTR [area], AX ; Parte entera se suma 
+    ADD areaFloat,DX ;parte decimal se suma
+
+    ;menos f sig por mas sig int
+    MOV AX,intMasSIg
+    MUL floatMenosSig
+    MOV BX,100 ; para separar parte entera y decimal
+    XOR DX,DX
+    DIV BX
+    ADD WORD PTR [area], AX ; Parte entera se suma 
+
+    MOV AX,areaFloat
+    ADD AX,DX
+    XOR DX,DX
+    MOV BX,10000 ; PARA VER SI HAY PARTE ENTERA
+    DIV BX
+    ADD WORD PTR [area], AX ; Parte entera se suma 
+    MOV areaFloat,DX
+
+    ADD areaFloat,DX ;parte decimal se suma
+
+    ;Menos sig int y f
+    ;Int menos significativo * float menos sig
+    MOV floatMenosSIg, BX
+    MOV intMenosSig,AX
+    XOR DX,DX
+    MUL BX
+
+    MOV DX,areaFloat
+    ADD AX,DX
+    XOR DX,DX
+    MOV BX,10000 ; PARA VER SI HAY PARTE ENTERA
+    DIV BX
+    ADD WORD PTR [area], AX ; Parte entera se suma 
+    MOV areaFloat,DX
+
+
+
+
+
+
+
+    ;////////////// intAncho*FloatLargo
+    ;*****************************************
+    MOV AX,apotema
+    MOV BX,perimeterFloat
+    MUL BX
+    MOV BX,100 ; para separar parte entera y decimal
+    DIV BX
+    MOV BX,AX ; int a bx
+    MOV AX,DX ;Parte decimal a ax
+    MOV CX,100  ;
+    MUL CX
+    ADD WORD PTR [area], BX ; Parte entera se suma 
+
+    MOV DX,areaFloat
+    ADD AX,DX
+    XOR DX,DX
+    MOV BX,10000 ; PARA VER SI HAY PARTE ENTERA
+    DIV BX
+    ADD WORD PTR [area], AX ; Parte entera se suma 
+    MOV areaFloat,DX
+
+
+    ; Calculando dec*dec////////////
+    MOV AX,apotemaFloat
+    MOV CX,100 ;Para evitar acarreo
+    XOR DX,DX
+    DIV CX
+    MOV x,DX ; Para manejar acarreo
+    MOV BX,alturaFloat
+    MUL BX
+    MOV DX,areaFloat
+    ADD AX,DX
+    XOR DX,DX
+    MOV BX,10000 ; PARA VER SI HAY PARTE ENTERA
+    DIV BX
+    ADD WORD PTR [area], AX ; Parte entera se suma 
+    MOV areaFloat,DX
+
+    ;Para manejar acarreo
+    MOV AX,X
+    MOV BX, alturaFloat
+    MUL BX
+    MOV CX, 100
+    XOR DX,DX
+    DIV CX ; YA QUE ERA 0.00X
+    ADD areaFloat,AX
+
 
     JMP DISPLAY_RESULTS
     
@@ -1003,74 +1188,25 @@ CALC_PARA_AREA:
     JMP DISPLAY_RESULTS
 
 DISPLAY_RESULTS:
-    LEA dx, crlf
-    CALL PRINTOUT   ; Cambio de linea
-    ; /////// Valor del area ///////
-    LEA dx, msgArea
-    CALL PRINTOUT   ; Mostrar "El area es: "
+    LEA DX, msgArea
+    MOV AH, 09H
+    INT 21H        ; Muestra el mensaje "El área es:"
 
-    MOV si, offset num_string+13
-    MOV ax, [area]      ; 16-bits de la parte entera baja
-    MOV dx, [area+2]    ; 16-bits de la parte entera alta
-    MOV bx, areaFloat   ; 16-bits del parte flotante
-    CALL PARSE  ; La funcion de parseo, convierte el contenido de DX:AX.BX al string en SI de DERECHA a IZQUIERDA
+    MOV AX, WORD PTR [area]
+    MOV DX, WORD PTR [area+2]
+    CALL PARSE32   ; Convierte el valor del área a cadena para mostrarlo
+    LEA DX, string1
+    CALL PRINTOUT  ; Muestra el valor del área
 
-    MOV si, cx  ; PARSE guarda en CX el indice donde se agrego el ultimo digito convertido
-    LEA dx, [num_string+si] ; Empieza a leer el string desde la posicion indicada por CX
-    CALL PRINTOUT   ; Muestra el valor del area
-    
-    XOR cx, cx
-    MOV si, offset num_string+13
-    CALL CLEAN_32STR    ; Limpiar los digitos usados en la cadena en SI
+    LEA DX, msgPerimeter
+    MOV AH, 09H
+    INT 21H        ; Muestra el mensaje "El perímetro es:"
 
-    LEA dx, crlf
-    CALL PRINTOUT   ; Cambio de linea
-
-    MOV [area], 0
-    MOV [area+2], 0
-    MOV areaFloat, 0
-    ; /////// Valor del perimetro ///////
-    LEA dx, msgPerimeter
-    CALL PRINTOUT
-
-    MOV si, offset num_string+13
-    MOV ax, perimeter       ; 16-bits de la parte entera baja
-    MOV dx, 0               ; 16-bits de la parte entera alta
-    MOV bx, perimeterFloat  ; 16-bits de la parte flotante
-    CALL PARSE  ; La funcion de parseo, convierte el contenido de DX:AX.BX al string en SI de DERECHA a IZQUIERDA
-
-    MOV si, cx 
-    LEA dx, [num_string+si] ; Mover el incio de la cadena al ultimo digito que indica CX
-    CALL PRINTOUT
-
-    XOR cx, cx
-    MOV si, offset num_string+13
-    CALL CLEAN_32STR    ; Limpiar los digitos usados en la cadena en SI
-
-    LEA dx, crlf
-    CALL PRINTOUT   ; Cambio de linea
-
-    MOV perimeter, 0
-    MOV perimeterFloat, 0
-    ; LEA DX, msgArea
-    ; MOV AH, 09H
-    ; INT 21H        ; Muestra el mensaje "El área es:"
-
-    ; MOV AX, WORD PTR [area]
-    ; MOV DX, WORD PTR [area+2]
-    ; CALL PARSE32   ; Convierte el valor del área a cadena para mostrarlo
-    ; LEA DX, string1
-    ; CALL PRINTOUT  ; Muestra el valor del área
-
-    ; LEA DX, msgPerimeter
-    ; MOV AH, 09H
-    ; INT 21H        ; Muestra el mensaje "El perímetro es:"
-
-    ; MOV AX, perimeter
-    ; XOR DX, DX
-    ; CALL PARSE32   ; Convierte el valor del perímetro a cadena para mostrarlo
-    ; LEA DX, string1
-    ; CALL PRINTOUT  ; Muestra el valor del perímetro
+    MOV AX, perimeter
+    XOR DX, DX
+    CALL PARSE32   ; Convierte el valor del perímetro a cadena para mostrarlo
+    LEA DX, string1
+    CALL PRINTOUT  ; Muestra el valor del perímetro
 
 PREGUNTAR_CONTINUAR:
     LEA DX, msgContinue
@@ -1179,191 +1315,52 @@ END_READ_LOOP_NEW:
 READ_NUMBER_NEW ENDP
 
 ; Rutina para convertir un número de 32 bits a cadena para mostrar
-; PARSE32 PROC
-;     PUSH BX
-;     PUSH CX
-;     PUSH SI
-;     MOV SI, 9
-;     MOV BX, 10
-;     MOV CX, 0
+PARSE32 PROC
+    PUSH BX
+    PUSH CX
+    PUSH SI
+    MOV SI, 9
+    MOV BX, 10
+    MOV CX, 0
 
-; PARSE32_LOOP:
-;     PUSH AX
-;     MOV AX, DX
-;     XOR DX, DX
-;     DIV BX         ; Divide DX:AX por 10
-;     MOV DI, AX
-;     POP AX
-;     DIV BX         ; Divide AX por 10
-;     ADD DL, '0'    ; Convierte el residuo a carácter
-;     MOV [string1+SI], DL
-;     DEC SI
-;     INC CX
-;     MOV DX, DI     ; Pasa la parte alta de la división a DX
-;     CMP AX, 0
-;     JNZ PARSE32_LOOP ; Continua hasta que AX sea 0
-;     CMP DX, 0
-;     JNZ PARSE32_LOOP ; Continua hasta que DX sea 0
+PARSE32_LOOP:
+    PUSH AX
+    MOV AX, DX
+    XOR DX, DX
+    DIV BX         ; Divide DX:AX por 10
+    MOV DI, AX
+    POP AX
+    DIV BX         ; Divide AX por 10
+    ADD DL, '0'    ; Convierte el residuo a carácter
+    MOV [string1+SI], DL
+    DEC SI
+    INC CX
+    MOV DX, DI     ; Pasa la parte alta de la división a DX
+    CMP AX, 0
+    JNZ PARSE32_LOOP ; Continua hasta que AX sea 0
+    CMP DX, 0
+    JNZ PARSE32_LOOP ; Continua hasta que DX sea 0
 
-;     MOV AL, ' '
-; FILL_SPACES:
-;     CMP SI, -1
-;     JE DONE_PARSING ; Si ya llenamos la cadena, terminamos
-;     MOV [string1+SI], AL
-;     DEC SI
-;     JMP FILL_SPACES
+    MOV AL, ' '
+FILL_SPACES:
+    CMP SI, -1
+    JE DONE_PARSING ; Si ya llenamos la cadena, terminamos
+    MOV [string1+SI], AL
+    DEC SI
+    JMP FILL_SPACES
 
-; DONE_PARSING:
-;     POP SI
-;     POP CX
-;     POP BX
-;     RET
-; PARSE32 ENDP
+DONE_PARSING:
+    POP SI
+    POP CX
+    POP BX
+    RET
+PARSE32 ENDP
 
-; Inserta un numero guardado DX:AX.BX en una cadena en SI (que debe tener el punto decimal con 10 ceros adelante y 2 ceros atras)
-PARSE proc  ; Inserta un numero guardado DX:AX.BX en una cadena en SI (que debe tener el punto decimal con 10 ceros adelantes y 2 ceros atras)
-    CMP dx, 0
-        JZ PARSE16 ; Si en la parte alta del numero no hay podemos saltar al otro caso
-    MOV cx, 10000
-    DIV cx ; Hacemos esta division entre 10 mil para separar nuestro entero de 32 bits en 2 grupos de 4 digitos
-
-    MOV [aux], ax   
-    MOV [aux+2], dx ; Movemos los resultados de la div a otro lugar por el momento
-    ; (1)
-    PARSE32:
-        MOV cx, 13
-        XOR ax, ax
-        XOR dx, dx
-
-        MOV ax, bx  ; Mover parte flotante a AX
-        MOV bx, 10  ; Ponemos nuestro divisor en BX
-        p32_FLT_loop:   ; Procesar digitos flotantes
-            CMP cx, 11
-                JE p32_midpoint ; Si ya no quedan digitos salimos del loop
-            DEC si  ; Movemos el cabezal de lectura una posicion atras
-            DEC cx  ; Decrementamos el contador
-            DIV bx  ; Aislamos un digito del numero
-
-            ADD dl, 30h ; Convertimos el digito a ASCII
-            MOV [si], dl; Movemos el caracter a la cadena
-
-            XOR dx, dx  ; Limpiamos el residuo de la div (DX)
-            JMP p32_FLT_loop
-
-        p32_midpoint:   ; Despues del primer ciclo
-        DEC si
-        MOV cx, 10
-        MOV ax, [aux+2] ; Movemos a AX nuestro primeros 4 digitos de la parte entera
-        p32_INT1_loop:   ; Procesar digitos enteros
-            CMP cx, 6
-                JE p32_endpoint1 ; Si ya no quedan digitos moverse a la siguiente parte
-            DEC si  ; Mover el cabezal de lectura una posicion atras
-            DEC cx  ; Decrementamos el contador
-
-            DIV bx          ; Aislar un digito
-            ADD dl, 30h     ; Convertir digito a ASCII
-            MOV [si], dl    ; Mover digito a la cadena
-            
-            XOR dx, dx      ; Limpiar registro
-            JMP p32_INT1_loop
-
-        p32_endpoint1:  ; Despues del segundo ciclo
-        MOV ax, [aux]; Movemos a AX el resto de digitos de la parte entera
-        CMP ax, 0
-        p32_INT2_loop:
-            CMP ax, 0
-                JE p32_endpoint2 ; Si ya no quedan digitos moverse a la siguiente parte
-            DEC cx  ; Decrementamos el contador
-            DEC si  ; Mover el cabezal de lectura una posicion atras
-
-            DIV bx          ; Aislar un digito
-            ADD dl, 30h     ; Convertir digito a ASCII
-            MOV [si], dl    ; Mover digito a la cadena
-            
-            XOR dx, dx      ; Limpiar registro
-            JMP p32_INT2_loop
-
-        p32_endpoint2:  ; Despues del tercer ciclo
-    JMP PARSE_RET
-    ; (2)
-    PARSE16:
-        MOV cx, 13
-        MOV [aux], ax
-        MOV ax, bx ; Mover primero la parte flotante
-        MOV bx, 10 ; Mover a BX nuestro divisor
-        p16_FLT_loop:   ; Procesar digitos flotantes
-            CMP cx, 11
-                JE p16_midpoint ; Si ya no quedan digitos salimos del loop
-            DEC si  ; Movemos el cabezal de lectura una posicion atras
-            DEC cx  ; Decrementamos el contador
-            DIV bx  ; Aislamos un digito del numero
-
-            ADD dl, 30h ; Convertimos el digito a ASCII
-            MOV [si], dl; Movemos el caracter a la cadena
-
-            XOR dx, dx  ; Limpiamos el residuo de la div (DX)
-            JMP p16_FLT_loop
-        p16_midpoint:   ; Despues del primer ciclo
-        DEC si
-        MOV cx, 10
-        MOV ax, [aux]   ; Mover nuevamente a AX la parte entera
-        CMP ax, 0
-            JE p16_endpoint
-        p16_INT_loop:   ; Procesar digitos enteros
-            CMP ax, 0
-                JE PARSE_RET ; Si ya no quedan digitos salimos del loop
-            DEC si  ; Movemos el cabezal de lectura una posicion atras
-            DEC cx  ; Decrementamos el contador
-            DIV bx  ; Aislamos un digito del numero
-
-            ADD dl, 30h ; Convertimos el digito a ASCII
-            MOV [si], dl; Movemos el caracter a la cadena
-
-            XOR dx, dx  ; Limpiamos el residuo de la div (DX)
-            JMP p16_INT_loop
-
-        p16_endpoint:   ; Despues del segundo ciclo
-        DEC cx
-    PARSE_RET:
-    XOR ax, ax
-    XOR bx, bx
-    XOR dx, dx
-
-    MOV [aux], ax
-    MOV [aux+2], ax
-    ret
-PARSE endp  ; Al final del proceso se guarda en CX el indice donde esta la ultima cifra significativa
-
-; Limpia la cadena guardada en SI con el formato esperado de '0000000000.00'
-CLEAN_32STR proc
-    ; RIGHT -> LEFT
-    MOV ah, 30h ; Caracter '0'
-    MOV cx, 13  ; Contador
-    clean_loop:
-        CMP cx, 10  ; Posicion donde esta la coma
-            JE loop_skip
-        CMP cx, 13  ; Final de la cadena
-            JE loop_skip
-        CMP cx, 0   ; Inicio de la cadena
-            JE clean_endpoint
-        MOV [si], ah
-        loop_skip:
-        DEC si
-        DEC cx
-        JMP clean_loop
-
-    clean_endpoint:
-    ret
-CLEAN_32STR endp
-
-; Muestra el contenido en DX
-PRINTOUT proc
-    MOV ah, 09h
-    INT 21h ; Redirecciona al output lo que sea que haya en DX
-
-    XOR ax, ax  ; Limpiar registro
-    XOR dx, dx  ; Limpiar registro
-    ret
-PRINTOUT endp
+; Rutina para mostrar la cadena generada
+PRINTOUT PROC
+    MOV AH, 09H
+    INT 21H
+    RET
+PRINTOUT ENDP
 
 END START ; Fin del programa, punto de entrada es START
