@@ -109,6 +109,9 @@
     baseParalelogramo DW 0
     baseParalelogramoFloat DW 0
 
+    intPI DW 3
+    floatPI DW 1400
+
     area DD 0        ; Área se almacena en un doble palabra para manejar números grandes
     areaFloat DW 0
     perimeter DW 0   ; Perímetro en una palabra
@@ -187,7 +190,7 @@ INVALID_OPTION:
     JMP SELECCIONAR_FIGURA ; Vuelve a pedir la selección de figura
 
 
-CALC_CUADRADO:
+CALC_CIRC:
     LEA DX, promptSize1
     MOV AH, 09H
     INT 21H
@@ -196,11 +199,8 @@ CALC_CUADRADO:
     MOV floatValue,DX
     XOR DX,DX
 
-    CMP intValue, 0
-    JLE INVALID_OPTION
-    CMP intValue, 9999
-    JG INVALID_OPTION
-    ;area si hay dec *****************************
+
+
     ;Calculo entero*entero/////////////////
 
     MOV AX, intValue
@@ -240,8 +240,78 @@ CALC_CUADRADO:
     ADD WORD PTR [area], AX ; Parte entera se suma 
     MOV areaFloat,DX 
     ;***************************************************
-    ;perimetro si hay dec  
-    ;Calculo enteros/////////////////
+
+
+
+
+
+
+CALC_CUADRADO:
+    LEA DX, promptSize1
+    MOV AH, 09H
+    INT 21H
+
+    CALL READ_NUMBER_NEW
+    MOV floatValue,DX
+    XOR DX,DX
+
+    CMP intValue, 0
+    JLE INVALID_OPTION
+    CMP intValue, 9999
+    JG INVALID_OPTION
+    ;area si hay dec *****************************
+    ;Calculo entero*entero/////////////////
+
+    MOV AX, intValue
+    MOV BX, AX
+    MUL BX
+    MOV WORD PTR [area], AX
+    MOV WORD PTR [area+2], DX
+    ;//////////////////////////
+ 
+    ;Calculo entero*dec /////////////
+    
+    ;*****************************************
+    MOV AX,intValue
+    MOV BX,100
+    XOR DX,DX
+    DIV BX
+    MOV intMenosSig, DX
+    xor dx,dx
+    MUL floatValue
+    MOV CX,2  ;
+    MUL CX
+    ADD WORD PTR [area], AX ; Parte entera se suma 
+    
+
+
+    MOV AX,intMenosSig
+    MUL floatValue
+    MOV BX,50 ; para separar parte entera y decimal
+    XOR DX,DX
+    DIV BX
+    ADD WORD PTR [area], AX ; Parte entera se suma 
+    MOV AX,DX
+    MOV CX,200
+    MUL CX
+    MOV areaFloat,AX
+
+
+
+
+    ; Calculando dec*dec////////////
+    MOV AX,floatValue
+    MUL AX
+    ADD AX,areaFloat
+    XOR DX,DX
+    MOV BX,10000 ; PARA VER SI HAY PARTE ENTERA
+    DIV BX
+    ADD WORD PTR [area], AX ; Parte entera se suma 
+    MOV areaFloat,DX
+
+
+
+    ;Calculo enteros/////////////////PERIMETROOO
 
     MOV AX, intValue
     ADD AX, AX
