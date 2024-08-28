@@ -3,9 +3,9 @@
 .model SMALL
 .stack 100H
 .DATA ; Seccion de inicializacion de datos
-    param1 DW 1, 0, 0 ; High:Low.Float
+    param1 DW 1, 0, 52 ; High:Low.Float
         ; bytes 1 a 4 el numero entero, mientras que los ultimos dos son la parte flotante
-    param2 DW 1, 0, 0  ; High:Low.Float
+    param2 DW 0, 900, 3  ; High:Low.Float
         ; de manera algebraica un numero de 32 bits se tal que [High](65535)+[Low]
         ; entonces los primeros 16 bits son un multiplicador y los otros 16 son el exceso
     result DW 0, 0, 0
@@ -27,24 +27,35 @@ START:
     MOV ds, ax  ; Inicializar la seccion de DATA
     XOR ax, ax
     ; Operaciones que queramos a hacer
-    CALL multiply ; operacion 1
+    CALL addition ; operacion 1
+    ; Operaciones que queramos a hacer
 
-    LEA dx, [prompt]
+    ; Mostrar resultado
+    LEA dx, [prompt]    ; Printear nuestro mensaje
     CALL PRINTOUT
 
     MOV si, offset num_string+13
     MOV ax, [result+2] ; 16 bits bajos del entero
     MOV dx, [result]   ; 16 bits altos del entero
-    MOV bx, [result+4] ; Parte flotante 
-    CALL PARSE
+    MOV bx, [result+4] ; 16 bits de parte flotante
+    CALL PARSE  ; PARSE guarda en CX el indicie contador hasta donde sustituyo valores
 
-    MOV si, cx
+    MOV si, cx  ; Mueve el indice contandor para indicar donde comenzara printear
     LEA dx, [num_string+si]
-    CALL PRINTOUT
+    CALL PRINTOUT ; Printear nuestros resultado
 
+    ; Endline y newline
     LEA dx, crlf
     CALL PRINTOUT
-    ; Operaciones que queramos a hacer
+    ; Endline y newline
+
+    XOR cx, cx  ; Limpiar el registro que no se esta usando
+    MOV si, offset num_string+13    ; Mover a SI el final de nuestra cadena con la forma '0000000000.00'
+    CALL CLEAN_32STR  ; CLEAN STR limpia el numero guardado en cadenas con la forma anterior
+
+    LEA dx, [num_string]
+    CALL PRINTOUT   ; Mostrar el string limpio
+    ; ///////////////////////////
     JMP EXIT
 ; Seccion de metodos para operaciones aritmeticas con datos con parte flotante
 ; (1)
@@ -140,81 +151,66 @@ START:
         ret
     substract endp
 ; (3)
-    multiply proc  ; [INT1*INT2]+[(INT1*FLT2)/100]+[(INT2*FLT1)/100]+[(FLT1*FLT2)/100^2]
-        ; (1)
-        ; partes altas
-        MOV ax, [param1]
-        MOV bx, [param2]
-        MUL bx
-
-        ADD [aux], dx
-        ADD [aux+2], ax
-
-        XOR ax, ax
-        XOR bx, bx
-
-        ; alto 1 y bajo 2
+    multiply proc  ; [INT1*INT2]+[(INT1*FLT2)/100]+[(INT2*FLT1)/100]+[(FLT1*FLT2)/100^2
+        ; Limitado Operaciones de 32 bits por 16 => 16:16.16 x 0:16.16
+        ; (a)[16-bits de PARAM2 por todos los de PARAM1]
+        ;
         MOV ax, [param1]
         MOV bx, [param2+2]
         MUL bx
 
-        ADD [aux+2], ax
-        ADC [aux], dx
-
-        XOR ax, ax
-        XOR bx, bx
-
-        ; bajo 1 y alto 2
-        MOV ax, [param1+2]
-        MOV bx, [param2]
-        MUL bx
-
-        ADD [aux+2], ax
-        ADC [aux], dx
-
-        XOR ax, ax
-        XOR bx, bx
-
-        ; bajo 1 y bajo 2
-        MOV ax, [param1+2]
-        MOV bx, [param2+2]
-        MUL bx
-
-        ADD [aux+2], ax
-        ADC [aux], dx
-
-        XOR ax, ax
-        XOR bx, bx
-
-        MOV ax, [aux+2]
-        MOV [result+2], ax
-        MOV ax, [aux]
         MOV [result], ax
+        ;
+        MOV ax, [param1+2]
+        MUL bx
+
+        MOV [result+2], ax
+        ; 
+        MOV ax, [param1+4]
+        MUL bx
+        MOV bx, 100
+        DIV bx
+        ; 
+        MOV [result+4], dx
+        MOV [result+2], ax
 
         XOR ax, ax
-        ; MOV ax, [param1+2]  ; 0
-        ; MOV dx, [param1]    ; DX:AX = INT1 1
+        XOR bx, bx
+        ; (b)[16-bits de flotantes de PARAM2 por todos]
+        ;
+        MOV ax, [param1]
+        MOV bx, [param2+4]
+        MOV cx, 100
+
+        MUL bx
+        DIV cx
+
+        MOV [result], ax
+        MOV [result+2], dx
+        ;
+        MOV ax, [param1+2]
+
+        MUL bx
+        DIV cx
+
+        ADD [result+2], ax
+        ADD [result+4], dx
+        ;
+        MOV ax, [param1+4]
+        MUL bx
+
+        DIV cx
+        XOR dx, dx
+
+        DIV cx
         
-        ; MOV bx, [param2+2]  ; 2
-        ; MOV cx, [param2]    ; CX:BX = INT2 0
-
-        ; MUL bx
-
-        ; MOV bx, ax
-        ; MOV ax, dx
-        ; MUL cx
-
-        ; ADD dx, bx
-
-        ; MOV ax, cx
-        ; MUL dx
-        ; ADD bx, dx
-
-        ; MOV [result+2], ax
-        ; MOV [result], dx
-        ; (2)
-        ; (3)
-        ; (4)
+        ADD [result+4], dx
+        ADD [result+2], ax
+        ;
+        XOR ax, ax
+        XOR bx, bx
+        XOR cx, cx
+        XOR dx, dx
         ret
     multiply endp 
 ; (4)
@@ -224,8 +220,11 @@ START:
 ; Seccion para metodos de conversion y escritura
 ; (a)
     PRINTOUT proc ; Hace 'print' de una cadena en DX
-        mov ah, 09h
-        int 21h ; Redirecciona al output lo que sea que haya en DX
+        MOV ah, 09h
+        INT 21h ; Redirecciona al output lo que sea que haya en DX
+
+        XOR ax, ax  ; 
+        XOR dx, dx  ;
         ret
     PRINTOUT endp
 ; (b)
@@ -257,12 +256,13 @@ START:
 
                 XOR dx, dx  ; Limpiamos el residuo de la div (DX)
                 JMP p32_FLT_loop
+
             p32_midpoint:   ; Despues del primer ciclo
             DEC si
             MOV cx, 10
             MOV ax, [aux+2] ; Movemos a AX nuestro primeros 4 digitos de la parte entera
             p32_INT1_loop:   ; Procesar digitos enteros
-                CMP ax, 0
+                CMP cx, 6
                     JE p32_endpoint1 ; Si ya no quedan digitos moverse a la siguiente parte
                 DEC si  ; Mover el cabezal de lectura una posicion atras
                 DEC cx  ; Decrementamos el contador
@@ -276,6 +276,7 @@ START:
 
             p32_endpoint1:  ; Despues del segundo ciclo
             MOV ax, [aux]; Movemos a AX el resto de digitos de la parte entera
+            CMP ax, 0
             p32_INT2_loop:
                 CMP ax, 0
                     JE p32_endpoint2 ; Si ya no quedan digitos moverse a la siguiente parte
@@ -340,9 +341,27 @@ START:
         ret
     PARSE endp  ; Al final del proceso se guarda en CX el indice donde esta la ultima cifra significativa
 ; (c)
-    CLEAN_STR proc
+    CLEAN_32STR proc
+        ; Limpia el string guardado en SI con el formato esperado de '0000000000.00'
+        ; RIGHT -> LEFT
+        MOV ah, 30h ; Caracter '0'
+        MOV cx, 13  ; Contador
+        clean_loop:
+            CMP cx, 10  ; Posicion donde esta la coma
+                JE loop_skip
+            CMP cx, 13  ; Final de la cadena
+                JE loop_skip
+            CMP cx, 0   ; Inicio de la cadena
+                JE clean_endpoint
+            MOV [si], ah
+            loop_skip:
+            DEC si
+            DEC cx
+            JMP clean_loop
+
+        clean_endpoint:
         ret
-    CLEAN_STR endp
+    CLEAN_32STR endp
 EXIT: 
     MOV ah, 4ch
     INT 21h    ; Finaliza nuestro programa
