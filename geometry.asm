@@ -116,10 +116,10 @@
     intwoPI DW 6
     floatwoPI DW 28
 
-    area DW 0, 0        ; Área se almacena en un doble palabra para manejar números grandes
+    area DD 0        ; Área se almacena en un doble palabra para manejar números grandes
     areaFloat DW 0
 
-    perimeter DW 0   ; Perímetro en una palabra
+    perimeter DW 0,0   ; Perímetro en una palabra
     perimeterFloat DW 0
 
     aux DW 0, 0, 0 ; Variable auxiliar para guardar resultados intermedios
@@ -210,7 +210,7 @@ INVALID_OPTION:
 
 
 CALC_CIRC:
-    LEA DX, promptSize1
+    LEA DX, promptRadio
     MOV AH, 09H
     INT 21H
 
@@ -221,15 +221,18 @@ CALC_CIRC:
 
 
     ;area******************************
-    ;Int*int
+
+    ;Multiplicación de enteros
+
     MOV AX, intValue
     MOV CX,intPI
     MUL CX
     MOV WORD PTR [area], AX
-    MOV WORD PTR [area+2], DX
+    MOV WORD PTR [area+2], DX 
 
-    ;//////////////  intpi*Floatrad
-    ;*****************************************
+
+    ;PI *Flotante del radio
+
     MOV AX,intPI
     MOV BX,floatValue
     MUL BX
@@ -243,8 +246,8 @@ CALC_CIRC:
     ADD areaFloat,AX ;parte decimal se suma
 
 
-;////////////// intRAD*FloATPI
-    ;*****************************************
+    ; 0.14 * intRadio
+
     MOV AX,intValue
     MOV BX,floatPI
     MUL BX
@@ -276,18 +279,17 @@ CALC_CIRC:
     MOV AX,DX
     MOV areaFloat,AX
     MOV perimeterFloat,AX
-    MOV AX,area
+    MOV AX,WORD PTR [area]
     MOV perimeter,AX
 
     XOR DX,DX
-    MOV area,DX
+    MOV WORD PTR [area],DX
     MOV areaFloat,DX
 
-    
-    ;PI X R TERMINADA Y FUNCINALLLLLLLLLLL////////////***************************************
+    ;***PI X R terminado ******
 
 
-    ;area******************************
+    ;***********PI * R^2***************
     ;Int*int
     MOV AX, intValue
     MOV CX,perimeter
@@ -295,8 +297,7 @@ CALC_CIRC:
     ADD WORD PTR [area], AX
     ADD WORD PTR [area+2], DX
 
-;////////////// intLargo*FloatAncho
-    ;*****************************************
+
     ;Se separa flotante
     MOV AX,perimeterFloat
     MOV BX,100
@@ -319,7 +320,7 @@ CALC_CIRC:
     ADD WORD PTR [area], AX ; Parte entera se suma 
 
 
-    ;menos int sig por mas sig float 
+    ; int menos significativo por flotante más signofocativo 
     MOV AX,floatMasSIg
     MUL intMenosSig
     MOV BX,100 ; para separar parte entera y decimal
@@ -331,14 +332,14 @@ CALC_CIRC:
     MUL CX
     ADD areaFloat,AX ;parte decimal se suma
 
-    ;menos f sig por mas sig int
+    ;Flotante menos signicativo * int más significativo
     MOV AX,intMasSIg
     MUL floatMenosSig
     MOV BX,100 ; para separar parte entera y decimal
     XOR DX,DX
     DIV BX
     ADD WORD PTR [area], AX ; Parte entera se suma 
-
+    
     MOV AX,DX
     MOV CX,100
     MUL CX
@@ -350,7 +351,7 @@ CALC_CIRC:
     MOV areaFloat,DX
 
 
-    ;Menos sig int y f
+    ;Menos significativos
     ;Int menos significativo * float menos sig
     MOV BX,floatMenosSIg
     MOV AX,intMenosSig
@@ -366,20 +367,19 @@ CALC_CIRC:
 
 
 
-
-       ;////////////// intLargo*FloatAncho
-    ;*****************************************
-
     
     ;////////////// intAncho*FloatLargo
     ;*****************************************
     MOV AX,floatValue
-    MOV BX,perimeter
+    MOV BX,perimeter ;Variable que almacena temporalmente Pi*r
     MUL BX
     MOV BX,100 ; para separar parte entera y decimal
     DIV BX
     ADD WORD PTR [area], AX ; Parte entera se suma 
+    ADC WORD PTR [area+2], 0    ; Suma el acarreo 
+
     MOV AX,DX ;Parte decimal a ax
+    MUL BX
 
     ADD AX,areaFloat    
     XOR DX,DX
@@ -388,14 +388,13 @@ CALC_CIRC:
     ADD WORD PTR [area], AX ; Parte entera se suma 
     MOV areaFloat,DX
 
-    ; Calculando dec*dec////////////
-    ; Calculando dec*dec////////////
-    MOV AX,baseFloat
+    ; Calculando dec*dec
+    MOV AX,perimeterFloat
     MOV CX,100 ;Para evitar acarreo
     XOR DX,DX
     DIV CX
     MOV x,DX ; Para manejar acarreo
-    MOV BX,alturaFloat
+    MOV BX,floatValue
     MUL BX
     MOV DX,areaFloat
     ADD AX,DX
@@ -407,7 +406,7 @@ CALC_CIRC:
 
     ;Para manejar acarreo
     MOV AX,X
-    MOV BX, alturaFloat
+    MOV BX, floatValue
     MUL BX
     MOV CX, 100
     XOR DX,DX
@@ -428,18 +427,17 @@ CALC_CIRC:
 
 
 
-    ;perimetro
+    ;Cálculo del perimetro
 
 
     ;Int*int
     MOV AX, intValue
-    MOV CX,intwoPI
+    MOV CX,intwoPI ;Variable que vale 2*pi
     MUL CX
     MOV WORD PTR [perimeter], AX
     MOV WORD PTR [perimeter+2], DX
 
-    ;//////////////  intpi*Floatrad
-    ;*****************************************
+
     MOV AX,intwoPI
     MOV BX,floatValue
     MUL BX
@@ -453,8 +451,6 @@ CALC_CIRC:
     ADD perimeterFloat,AX ;parte decimal se suma
 
 
-;////////////// intRAD*FloATPI
-    ;*****************************************
     MOV AX,intValue
     MOV BX,floatwoPI
     MUL BX
@@ -475,7 +471,7 @@ CALC_CIRC:
     MOV perimeterFloat,DX
 
 
-    ; Calculando dec*dec////////////
+    ; Calculando dec*dec
     MOV AX,floatwoPI
     MUL floatValue
     ADD AX,perimeterFloat
@@ -489,7 +485,6 @@ CALC_CIRC:
     DIV CX
     MOV perimeterFloat,AX
 
-    ;PI X R TERMINADA Y FUNCINALLLLLLLLLLL////////////
 
 
 
@@ -521,11 +516,9 @@ CALC_CUAD_AREA:
     MUL BX
     MOV WORD PTR [area], AX
     MOV WORD PTR [area+2], DX
-    ;//////////////////////////
+
  
-    ;Calculo entero*dec /////////////
-    
-    ;*****************************************
+    ;Calculo entero*dec
     MOV AX,intValue
     MOV BX,100
     XOR DX,DX
@@ -537,11 +530,10 @@ CALC_CUAD_AREA:
     MUL CX
     ADD WORD PTR [area], AX ; Parte entera se suma 
     
-
-
+    ;Manejando acarreo
     MOV AX,intMenosSig
     MUL floatValue
-    MOV BX,50 ; para separar parte entera y decimal
+    MOV BX,50 ; para separar parte entera y decimal 
     XOR DX,DX
     DIV BX
     ADD WORD PTR [area], AX ; Parte entera se suma 
@@ -553,7 +545,7 @@ CALC_CUAD_AREA:
 
 
 
-    ; Calculando dec*dec////////////
+    ; Calculando dec*dec
     MOV AX,floatValue
     MUL AX
     ADD AX,areaFloat
@@ -569,7 +561,7 @@ CALC_CUAD_AREA:
 
 
 
-    ;Calculo enteros/////////////////PERIMETROOO
+    ;Calculo enteros perimetro
 
     MOV AX, intValue
     ADD AX, AX
@@ -577,7 +569,7 @@ CALC_CUAD_AREA:
     MOV perimeter, AX
     
     
-    ; decimales//////////////////
+    ; decimales
 
     MOV AX ,floatValue
     ADD AX, AX
@@ -649,19 +641,19 @@ CALC_RECT_AREA:
     ADD areaFloat,AX ;parte decimal se suma
 
 
-;////////////// intAncho*FloatLargo
+    ;////////////// intAncho*FloatLargo
     ;*****************************************
     MOV AX,ancho
     MOV BX,largoFloat
     MUL BX
-    XOR DX,DX
     MOV BX,100 ; para separar parte entera y decimal
     DIV BX
-    MOV BX,AX ; int a bx
+    ADD WORD PTR [area], AX ; Parte entera se suma 
+    ADC WORD PTR [area+2], 0    ; Suma el acarreo 
+
     MOV AX,DX ;Parte decimal a ax
     MOV CX,100  ;
     MUL CX
-    ADD WORD PTR [area], BX ; Parte entera se suma 
 
     MOV DX,areaFloat
     ADD AX,DX
@@ -687,9 +679,8 @@ CALC_RECT_AREA:
     MOV areaFloat,AX
     
     
-    ;perimetro************************************
 
-    ;parte entera/////////////////////////
+    ;perímetro
     MOV AX, largo
     ADD AX, AX
     MOV BX, ancho
@@ -745,10 +736,7 @@ INVALID_INPUT_TRI:
     JMP INVALID_OPTION
 
 CALC_TRI_AREA:
-    ;perimetro************************************
-
-    ;perimetro si hay dec  
-    ;Calculo enteros/////////////////
+    ;perimetro*****************
 
     MOV AX, base
     MOV BX,AX
@@ -757,7 +745,7 @@ CALC_TRI_AREA:
     MOV perimeter, AX
     
     
-    ; decimales//////////////////
+    ; decimales
 
     MOV AX ,baseFloat
     MOV BX,AX
@@ -774,6 +762,225 @@ CALC_TRI_AREA:
 
 
     ;area***********************************
+    ;Se divide primero la base entre 2
+    MOV AX, base
+    XOR DX,DX
+    MOV BX, 2
+    DIV BX
+    MOV base, AX ; NUEVA BASE 
+    MOV AX,DX ;residuo a AX
+    MOV CX,5000
+    MUL CX
+    MOV DX,baseFloat ; SE PONE  PARTE FLOTANTE EN DX
+    MOV baseFloat,AX ; nueva parte flotante
+    MOV AX,DX 
+    MOV CX,100
+    MUL CX
+    MOV CX,2 
+    XOR DX,DX
+    DIV CX 
+    ADD baseFloat, AX
+
+
+
+    ;Int*int
+    MOV AX, altura
+    MUL base
+    MOV WORD PTR [area], AX
+    MOV WORD PTR [area+2], DX
+
+    ;////////////// intLargo*FloatAncho
+    ;*****************************************
+    ;Se separa flotante
+    MOV AX,baseFloat
+    MOV BX,100
+    XOR DX,DX
+    DIV BX
+    MOV floatMenosSig,DX
+    MOV floatMasSIg,AX
+    
+    ;Se separa entero
+    MOV AX, altura
+    XOR DX,DX
+    DIV BX
+    MOV intMenosSig, DX
+    MOV intMasSIg, AX
+    
+    ;Int más significativo * float mas sig
+    MOV BX, floatMasSIg
+    XOR DX,DX
+    MUL BX
+    ADD WORD PTR [area], AX ; Parte entera se suma 
+
+
+    ;int-   float+
+    MOV AX,floatMasSIg
+    MUL intMenosSig
+    MOV BX,100 ; para separar parte entera y decimal
+    XOR DX,DX
+    DIV BX
+    ADD WORD PTR [area], AX ; Parte entera se suma 
+    MOV AX,DX
+    MOV CX,100
+    MUL CX
+    ADD areaFloat,AX ;parte decimal se suma
+
+    ;int+ float-
+    MOV AX,intMasSIg
+    MUL floatMenosSig
+    MOV BX,100 ; para separar parte entera y decimal
+    XOR DX,DX
+    DIV BX
+    ADD WORD PTR [area], AX ; Parte entera se suma 
+
+    MOV AX,DX
+    MOV CX,100
+    MUL CX
+    ADD AX,areaFloat
+    XOR DX,DX
+    MOV BX,10000 ; PARA VER SI HAY PARTE ENTERA
+    DIV BX
+    ADD WORD PTR [area], AX ; Parte entera se suma 
+    MOV areaFloat,DX
+
+
+    ;int- float-
+    ;Int menos significativo * float menos sig
+    MOV BX,floatMenosSIg
+    MOV AX,intMenosSig
+    XOR DX,DX
+    MUL BX
+
+    ADD AX,areaFloat
+    XOR DX,DX
+    MOV BX,10000 ; PARA VER SI HAY PARTE ENTERA
+    DIV BX
+    ADD WORD PTR [area], AX ; Parte entera se suma 
+    MOV areaFloat,DX
+
+    ;        intAncho*FloatLargo
+    ;*****************************************
+    MOV AX,base
+    MOV BX,alturaFloat
+    MUL BX
+    MOV BX,100 ; para separar parte entera y decimal
+    DIV BX
+    MOV BX,AX ; int a bx
+    MOV AX,DX ;Parte decimal a ax
+    MOV CX,100  ;
+    MUL CX
+    ADD WORD PTR [area], BX ; Parte entera se suma 
+    ADC WORD PTR [area+2], 0    ; Suma el acarreo a los segundos 16 bits
+
+
+    MOV DX,areaFloat
+    ADD AX,DX
+    XOR DX,DX
+    MOV BX,10000 ; PARA VER SI HAY PARTE ENTERA
+    DIV BX
+    ADD WORD PTR [area], AX ; Parte entera se suma 
+    MOV areaFloat,DX
+
+
+    ; Calculando dec*dec
+    MOV AX,baseFloat
+    MOV CX,100 ;Para evitar acarreo
+    XOR DX,DX
+    DIV CX
+    MOV x,DX ; Parte la fracción para evitar acarreo sin causar inexactitud en los cálculos
+    MOV BX,alturaFloat
+    MUL BX
+    MOV DX,areaFloat
+    ADD AX,DX
+    XOR DX,DX
+    MOV BX,10000 ; PARA VER SI HAY PARTE ENTERA
+    DIV BX
+    ADD WORD PTR [area], AX ; Parte entera se suma 
+    MOV areaFloat,DX
+
+    ;Para manejar acarreo
+    MOV AX,X
+    MOV BX, alturaFloat
+    MUL BX
+    MOV CX, 100
+    XOR DX,DX
+    DIV CX ; YA QUE ERA 0.00X
+    ADD AX, areaFloat
+    MOV BX,10000 ; PARA VER SI HAY PARTE ENTERA
+    XOR DX,DX
+    DIV BX
+    ADD WORD PTR [area], AX ; Parte entera se suma 
+    MOV AX,DX
+    MOV CX,100
+    XOR DX,DX
+    DIV CX
+    MOV areaFloat,AX
+    
+
+
+
+    JMP DISPLAY_RESULTS
+
+CALC_ROMBO:
+    LEA DX, promptLadoRombo
+    MOV AH, 09H
+    INT 21H
+    CALL READ_NUMBER_NEW
+    MOV ladoRomboFloat, DX
+    MOV AX, intValue
+    MOV ladoRombo, AX
+
+    LEA DX, promptDiagonalMayor
+    MOV AH, 09H
+    INT 21H
+    CALL READ_NUMBER_NEW
+    MOV alturaFloat, DX
+    MOV AX, intValue
+    MOV altura,AX   
+
+    LEA DX, promptDiagonalMenor
+    MOV AH, 09H
+    INT 21H
+    CALL READ_NUMBER_NEW
+    MOV baseFloat, DX
+    MOV AX, intValue
+    MOV base,AX
+
+
+    JMP CALC_ROMBO_AREA
+
+INVALID_INPUT_ROMBO:
+    JMP INVALID_OPTION
+
+CALC_ROMBO_AREA:
+
+    ;Perímetro************************************
+
+
+
+    MOV AX, ladoRombo
+    ADD AX, AX
+    ADD AX,AX
+    MOV perimeter, AX
+    
+    
+
+    MOV AX ,ladoRomboFloat
+    ADD AX, AX
+    ADD AX,AX
+    XOR DX,DX 
+    MOV BX,100 ;PARA SEPARAR INT Y FLOAT
+    DIV BX
+    ADD perimeterFloat,DX
+    ADD perimeter, AX 
+
+
+
+
+
+   ;area***********************************
+
+   ;Se calcula igual que el triangulo
     ;div/2////////////////
     MOV AX, base
     XOR DX,DX
@@ -882,6 +1089,8 @@ CALC_TRI_AREA:
     MOV CX,100  ;
     MUL CX
     ADD WORD PTR [area], BX ; Parte entera se suma 
+    ADC WORD PTR [area+2], 0    ; Suma el acarreo a los segundos 16 bits
+
 
     MOV DX,areaFloat
     ADD AX,DX
@@ -892,7 +1101,7 @@ CALC_TRI_AREA:
     MOV areaFloat,DX
 
 
-    ; Calculando dec*dec////////////
+    ; Calculando dec*dec
     MOV AX,baseFloat
     MOV CX,100 ;Para evitar acarreo
     XOR DX,DX
@@ -925,222 +1134,6 @@ CALC_TRI_AREA:
     XOR DX,DX
     DIV CX
     MOV areaFloat,AX
-    
-
-
-
-    JMP DISPLAY_RESULTS
-
-CALC_ROMBO:
-    LEA DX, promptLadoRombo
-    MOV AH, 09H
-    INT 21H
-    CALL READ_NUMBER_NEW
-    MOV ladoRomboFloat, DX
-    MOV AX, intValue
-    MOV ladoRombo, AX
-
-    LEA DX, promptDiagonalMayor
-    MOV AH, 09H
-    INT 21H
-    CALL READ_NUMBER_NEW
-    MOV alturaFloat, DX
-    MOV AX, intValue
-    MOV altura,AX   
-
-    LEA DX, promptDiagonalMenor
-    MOV AH, 09H
-    INT 21H
-    CALL READ_NUMBER_NEW
-    MOV baseFloat, DX
-    MOV AX, intValue
-    MOV base,AX
-
-
-    JMP CALC_ROMBO_AREA
-
-INVALID_INPUT_ROMBO:
-    JMP INVALID_OPTION
-
-CALC_ROMBO_AREA:
-
-    ;perimetro************************************
-
-    ;perimetro si hay dec  
-    ;Calculo enteros/////////////////
-
-    MOV AX, ladoRombo
-    ADD AX, AX
-    ADD AX,AX
-    MOV perimeter, AX
-    
-    
-    ; decimales//////////////////
-
-    MOV AX ,ladoRomboFloat
-    ADD AX, AX
-    ADD AX,AX
-    XOR DX,DX 
-    MOV BX,100 ;PARA SEPARAR INT Y FLOAT
-    DIV BX
-    ADD perimeterFloat,DX
-    ADD perimeter, AX 
-
-
-
-
-
-;area***********************************
-    ;div/2////////////////
-    MOV AX, base
-    XOR DX,DX
-    MOV BX, 2
-    DIV BX
-    MOV base, AX ; NUEVA BASE 
-    MOV AX,DX ;residuo a AX
-    MOV CX,5000
-    MUL CX
-    MOV DX,baseFloat ; SE PONE  PArTE FLOTANTE EN DX
-    MOV baseFloat,AX ; nueva parte flotante
-    MOV AX,DX 
-    MOV CX,100
-    MUL CX
-    MOV CX,2 
-    XOR DX,DX
-    DIV CX 
-    ADD baseFloat, AX
-
-
-
-    ;Int*int
-    MOV AX, altura
-    MUL base
-    MOV WORD PTR [area], AX
-    MOV WORD PTR [area+2], DX
-
-    ;////////////// intLargo*FloatAncho
-    ;*****************************************
-    ;Se separa flotante
-    MOV AX,baseFloat
-    MOV BX,100
-    XOR DX,DX
-    DIV BX
-    MOV floatMenosSig,DX
-    MOV floatMasSIg,AX
-    
-    ;Se separa entero
-    MOV AX, altura
-    XOR DX,DX
-    DIV BX
-    MOV intMenosSig, DX
-    MOV intMasSIg, AX
-    
-    ;Int mas significativo * float mas sig
-    MOV BX, floatMasSIg
-    XOR DX,DX
-    MUL BX
-    ADD WORD PTR [area], AX ; Parte entera se suma 
-
-
-    ;menos int sig por mas sig float 
-    MOV AX,floatMasSIg
-    MUL intMenosSig
-    MOV BX,100 ; para separar parte entera y decimal
-    XOR DX,DX
-    DIV BX
-    ADD WORD PTR [area], AX ; Parte entera se suma 
-    ADD areaFloat,DX ;parte decimal se suma
-
-    ;menos f sig por mas sig int
-    MOV AX,intMasSIg
-    MUL floatMenosSig
-    MOV BX,100 ; para separar parte entera y decimal
-    XOR DX,DX
-    DIV BX
-    ADD WORD PTR [area], AX ; Parte entera se suma 
-
-    MOV AX,areaFloat
-    ADD AX,DX
-    XOR DX,DX
-    MOV BX,10000 ; PARA VER SI HAY PARTE ENTERA
-    DIV BX
-    ADD WORD PTR [area], AX ; Parte entera se suma 
-    MOV areaFloat,DX
-
-    ADD areaFloat,DX ;parte decimal se suma
-
-    ;Menos sig int y f
-    ;Int menos significativo * float menos sig
-    MOV floatMenosSIg, BX
-    MOV intMenosSig,AX
-    XOR DX,DX
-    MUL BX
-
-    MOV DX,areaFloat
-    ADD AX,DX
-    XOR DX,DX
-    MOV BX,10000 ; PARA VER SI HAY PARTE ENTERA
-    DIV BX
-    ADD WORD PTR [area], AX ; Parte entera se suma 
-    MOV areaFloat,DX
-
-
-
-
-
-
-
-    ;////////////// intAncho*FloatLargo
-    ;*****************************************
-    MOV AX,base
-    MOV BX,alturaFloat
-    MUL BX
-    MOV BX,100 ; para separar parte entera y decimal
-    DIV BX
-    MOV BX,AX ; int a bx
-    MOV AX,DX ;Parte decimal a ax
-    MOV CX,100  ;
-    MUL CX
-    ADD WORD PTR [area], BX ; Parte entera se suma 
-
-    MOV DX,areaFloat
-    ADD AX,DX
-    XOR DX,DX
-    MOV BX,10000 ; PARA VER SI HAY PARTE ENTERA
-    DIV BX
-    ADD WORD PTR [area], AX ; Parte entera se suma 
-    MOV areaFloat,DX
-
-
-    ; Calculando dec*dec////////////
-    MOV AX,baseFloat
-    MOV CX,100 ;Para evitar acarreo
-    XOR DX,DX
-    DIV CX
-    MOV x,DX ; Para manejar acarreo
-    MOV BX,alturaFloat
-    MUL BX
-    MOV DX,areaFloat
-    ADD AX,DX
-    XOR DX,DX
-    MOV BX,10000 ; PARA VER SI HAY PARTE ENTERA
-    DIV BX
-    ADD WORD PTR [area], AX ; Parte entera se suma 
-    MOV areaFloat,DX
-
-    ;Para manejar acarreo
-    MOV AX,X
-    MOV BX, alturaFloat
-    MUL BX
-    MOV CX, 100
-    XOR DX,DX
-    DIV CX ; YA QUE ERA 0.00X
-    ADD areaFloat,AX
-    
-    
-
-
-
     JMP DISPLAY_RESULTS
 
 
@@ -1175,10 +1168,7 @@ INVALID_INPUT_PENT:
     JMP INVALID_OPTION
 
 CALC_PENT_AREA:
-;perimetro************************************
-
-    ;perimetro si hay dec  
-    ;Calculo enteros/////////////////
+    ;perímetro
 
     MOV AX, ladoPentagono
     MOV BX,5
@@ -1186,8 +1176,6 @@ CALC_PENT_AREA:
     MOV perimeter, AX
     
     
-    ; decimales//////////////////
-
     MOV AX ,ladoPentagonoFloat
     MOV BX,5
     MUL BX
@@ -1198,13 +1186,221 @@ CALC_PENT_AREA:
     ADD perimeter, AX 
 
 
-;area***********************************
+    ;area***********************************
+    ;Se calcula igual a el rombo
     ;div/2////////////////
     MOV AX, apotema
     XOR DX,DX
     MOV BX, 2
     DIV BX
-    MOV base, AX ; NUEVA BASE 
+    MOV apotema, AX ; NUEVA BASE 
+    MOV AX,DX ;residuo a AX
+    MOV CX,5000
+    MUL CX
+    MOV DX,apotemaFloat ; SE PONE  PArTE FLOTANTE EN DX
+    MOV apotemaFloat,AX ; nueva parte flotante
+    MOV AX,DX 
+    MOV CX,100
+    MUL CX
+    MOV CX,2 
+    XOR DX,DX
+    DIV CX 
+    ADD apotemaFloat, AX
+
+
+
+    ;Int*int
+    MOV AX, perimeter
+    MUL apotema
+    MOV WORD PTR [area], AX
+    MOV WORD PTR [area+2], DX
+
+    ;////////////// intLargo*FloatAncho
+    ;*****************************************
+    ;Se separa flotante
+    MOV AX,apotemaFloat
+    MOV BX,100
+    XOR DX,DX
+    DIV BX
+    MOV floatMenosSig,DX
+    MOV floatMasSIg,AX
+    
+    ;Se separa entero
+    MOV AX, perimeter
+    XOR DX,DX
+    DIV BX
+    MOV intMenosSig, DX
+    MOV intMasSIg, AX
+    
+    MOV BX, floatMasSIg
+    XOR DX,DX
+    MUL BX
+    ADD WORD PTR [area], AX ; Parte entera se suma 
+
+
+    MOV AX,floatMasSIg
+    MUL intMenosSig
+    MOV BX,100 ; para separar parte entera y decimal
+    XOR DX,DX
+    DIV BX
+    ADD WORD PTR [area], AX ; Parte entera se suma 
+    MOV AX,DX
+    MOV CX,100
+    MUL CX
+    ADD areaFloat,AX ;parte decimal se suma
+
+    MOV AX,intMasSIg
+    MUL floatMenosSig
+    MOV BX,100 ; para separar parte entera y decimal
+    XOR DX,DX
+    DIV BX
+    ADD WORD PTR [area], AX ; Parte entera se suma 
+
+    MOV AX,DX
+    MOV CX,100
+    MUL CX
+    ADD AX,areaFloat
+    XOR DX,DX
+    MOV BX,10000 ; PARA VER SI HAY PARTE ENTERA
+    DIV BX
+    ADD WORD PTR [area], AX ; Parte entera se suma 
+    MOV areaFloat,DX
+
+
+    ;Int menos significativo * float menos sig
+    MOV BX,floatMenosSIg
+    MOV AX,intMenosSig
+    XOR DX,DX
+    MUL BX
+
+    ADD AX,areaFloat
+    XOR DX,DX
+    MOV BX,10000 ; PARA VER SI HAY PARTE ENTERA
+    DIV BX
+    ADD WORD PTR [area], AX ; Parte entera se suma 
+    MOV areaFloat,DX
+
+    ;////////////// intAncho*FloatLargo
+    ;*****************************************
+    MOV AX,apotema
+    MOV BX,perimeterFloat
+    MUL BX
+    MOV BX,100 ; para separar parte entera y decimal
+    DIV BX
+    MOV BX,AX ; int a bx
+    MOV AX,DX ;Parte decimal a ax
+    MOV CX,100  ;
+    MUL CX
+    ADD WORD PTR [area], BX ; Parte entera se suma 
+
+    MOV DX,areaFloat
+    ADD AX,DX
+    XOR DX,DX
+    MOV BX,10000 ; PARA VER SI HAY PARTE ENTERA
+    DIV BX
+    ADD WORD PTR [area], AX ; Parte entera se suma 
+    MOV areaFloat,DX
+
+
+    ; Calculando dec*dec
+    MOV AX,apotemaFloat
+    MOV CX,100 ;Para evitar acarreo
+    XOR DX,DX
+    DIV CX
+    MOV x,DX ; Para manejar acarreo
+    MOV BX,perimeterFloat
+    MUL BX
+    MOV DX,areaFloat
+    ADD AX,DX
+    XOR DX,DX
+    MOV BX,10000 ; PARA VER SI HAY PARTE ENTERA
+    DIV BX
+    ADD WORD PTR [area], AX ; Parte entera se suma 
+    MOV areaFloat,DX
+
+    ;Para manejar acarreo
+    MOV AX,X
+    MOV BX, perimeterFloat
+    MUL BX
+    MOV CX, 100
+    XOR DX,DX
+    DIV CX ; YA QUE ERA 0.00X
+    ADD AX, areaFloat
+    MOV BX,10000 ; PARA VER SI HAY PARTE ENTERA
+    XOR DX,DX
+    DIV BX
+    ADD WORD PTR [area], AX ; Parte entera se suma 
+    MOV AX,DX
+    MOV CX,100
+    XOR DX,DX
+    DIV CX
+    MOV areaFloat,AX
+    
+
+    JMP DISPLAY_RESULTS
+    
+CALC_HEXAGONO:
+    LEA DX, promptLadoHexagono
+    MOV AH, 09H
+    INT 21H
+    CALL READ_NUMBER_NEW
+    MOV ladoHexagonoFloat,DX
+    MOV AX,intValue
+    MOV ladoHexagono,AX
+
+
+    LEA DX, promptApotemaHexagono
+    MOV AH, 09H
+    INT 21H
+    CALL READ_NUMBER_NEW
+    MOV apotemaFloat,DX
+    MOV AX,intValue
+    MOV apotema, AX
+
+    CMP ladoHexagono, 0
+    JLE INVALID_INPUT_HEX
+    CMP ladoHexagono, 9999
+    JG INVALID_INPUT_HEX
+    CMP apotema, 0
+    JLE INVALID_INPUT_HEX
+    CMP apotema, 9999
+    JG INVALID_INPUT_HEX
+    
+    JMP CALC_HEX_AREA
+
+INVALID_INPUT_HEX:
+    JMP INVALID_OPTION
+
+CALC_HEX_AREA:
+    ;perímetro*****************
+
+
+    MOV AX, ladoHexagono
+    MOV BX,6
+    MUL BX
+    MOV perimeter, AX
+    
+    
+
+
+    MOV AX ,ladoHexagonoFloat
+    MOV BX,6
+    MUL BX
+    XOR DX,DX 
+    MOV BX,100 ;PARA SEPARAR INT Y FLOAT
+    DIV BX
+    ADD perimeterFloat,DX
+    ADD perimeter, AX 
+
+
+    ;area***********************************
+    ;Se cálcula igual que triángulo
+    ;div/2////////////////
+    MOV AX, apotema
+    XOR DX,DX
+    MOV BX, 2
+    DIV BX
+    MOV apotema, AX ; NUEVA BASE 
     MOV AX,DX ;residuo a AX
     MOV CX,5000
     MUL CX
@@ -1257,7 +1453,10 @@ CALC_PENT_AREA:
     XOR DX,DX
     DIV BX
     ADD WORD PTR [area], AX ; Parte entera se suma 
-    ADD areaFloat,DX ;parte decimal se suma
+    MOV AX,DX
+    MOV CX,100
+    MUL CX
+    ADD areaFloat,AX ;parte decimal se suma
 
     ;menos f sig por mas sig int
     MOV AX,intMasSIg
@@ -1267,36 +1466,30 @@ CALC_PENT_AREA:
     DIV BX
     ADD WORD PTR [area], AX ; Parte entera se suma 
 
-    MOV AX,areaFloat
-    ADD AX,DX
+    MOV AX,DX
+    MOV CX,100
+    MUL CX
+    ADD AX,areaFloat
     XOR DX,DX
     MOV BX,10000 ; PARA VER SI HAY PARTE ENTERA
     DIV BX
     ADD WORD PTR [area], AX ; Parte entera se suma 
     MOV areaFloat,DX
 
-    ADD areaFloat,DX ;parte decimal se suma
 
     ;Menos sig int y f
     ;Int menos significativo * float menos sig
-    MOV floatMenosSIg, BX
-    MOV intMenosSig,AX
+    MOV BX,floatMenosSIg
+    MOV AX,intMenosSig
     XOR DX,DX
     MUL BX
 
-    MOV DX,areaFloat
-    ADD AX,DX
+    ADD AX,areaFloat
     XOR DX,DX
     MOV BX,10000 ; PARA VER SI HAY PARTE ENTERA
     DIV BX
     ADD WORD PTR [area], AX ; Parte entera se suma 
     MOV areaFloat,DX
-
-
-
-
-
-
 
     ;////////////// intAncho*FloatLargo
     ;*****************************************
@@ -1326,7 +1519,7 @@ CALC_PENT_AREA:
     XOR DX,DX
     DIV CX
     MOV x,DX ; Para manejar acarreo
-    MOV BX,alturaFloat
+    MOV BX,perimeterFloat
     MUL BX
     MOV DX,areaFloat
     ADD AX,DX
@@ -1338,82 +1531,56 @@ CALC_PENT_AREA:
 
     ;Para manejar acarreo
     MOV AX,X
-    MOV BX, alturaFloat
+    MOV BX, perimeterFloat
     MUL BX
     MOV CX, 100
     XOR DX,DX
     DIV CX ; YA QUE ERA 0.00X
-    ADD areaFloat,AX
-
-
-    JMP DISPLAY_RESULTS
-    
-CALC_HEXAGONO:
-    LEA DX, promptLadoHexagono
-    MOV AH, 09H
-    INT 21H
-    CALL READ_NUMBER_NEW
-    MOV ladoHexagono, AX
-
-    LEA DX, promptApotemaHexagono
-    MOV AH, 09H
-    INT 21H
-    CALL READ_NUMBER_NEW
-    MOV apotemaHexagono, AX
-
-    CMP ladoHexagono, 0
-    JLE INVALID_INPUT_HEX
-    CMP ladoHexagono, 9999
-    JG INVALID_INPUT_HEX
-    CMP apotemaHexagono, 0
-    JLE INVALID_INPUT_HEX
-    CMP apotemaHexagono, 9999
-    JG INVALID_INPUT_HEX
-    JMP CALC_HEX_AREA
-
-INVALID_INPUT_HEX:
-    JMP INVALID_OPTION
-
-CALC_HEX_AREA:
-    ; Cálculo del perímetro: 6 * lado
-    MOV AX, ladoHexagono
-    MOV BX, 6
-    MUL BX
-    MOV perimeter, AX
-
-    ; Cálculo del área: (Perímetro * Apotema) / 2
-    MOV AX, perimeter
-    MUL apotemaHexagono
-    MOV BX, 2
+    ADD AX, areaFloat
+    MOV BX,10000 ; PARA VER SI HAY PARTE ENTERA
+    XOR DX,DX
     DIV BX
-    MOV WORD PTR [area], AX
-    MOV WORD PTR [area+2], DX
-
+    ADD WORD PTR [area], AX ; Parte entera se suma 
+    MOV AX,DX
+    MOV CX,100
+    XOR DX,DX
+    DIV CX
+    MOV areaFloat,AX
+    
     JMP DISPLAY_RESULTS
+
 
 CALC_TRAPECIO:
     LEA DX, promptAlturaTrapecio
     MOV AH, 09H
     INT 21H
     CALL READ_NUMBER_NEW
+    MOV alturaTrapecioFloat,DX
+    MOV AX,intValue
     MOV alturaTrapecio, AX
 
     LEA DX, promptBaseMayorTrapecio
     MOV AH, 09H
     INT 21H
     CALL READ_NUMBER_NEW
+    MOV baseMayorTrapecioFloat,DX
+    MOV AX,intValue
     MOV baseMayorTrapecio, AX
 
     LEA DX, promptBaseMenorTrapecio
     MOV AH, 09H
     INT 21H
     CALL READ_NUMBER_NEW
+    MOV baseMenorTrapecioFloat,DX
+    MOV AX,intValue
     MOV baseMenorTrapecio, AX
 
     LEA DX, promptLadoMenorTrapecio
     MOV AH, 09H
     INT 21H
     CALL READ_NUMBER_NEW
+    MOV ladoMenorTrapecioFloat,DX
+    MOV AX,intValue
     MOV ladoMenorTrapecio, AX
 
     CMP alturaTrapecio, 0
@@ -1445,23 +1612,193 @@ CALC_TRAP_AREA:
     ADD AX, baseMenorTrapecio
     MOV perimeter, AX
 
-    ; Cálculo del área: ((BASE MAYOR + BASE MENOR) * ALTURA) / 2
-    
-    ; Primero, sumamos BASE MAYOR + BASE MENOR
+    ;DECIMALES PERIMETRO
+
+    MOV AX ,ladoMenorTrapecioFloat
+    ADD AX, AX
+    ADD AX,baseMenorTrapecioFloat
+    ADD AX, baseMayorTrapecioFloat
+    XOR DX,DX 
+    MOV BX,100 ;PARA SEPARAR INT Y FLOAT
+    DIV BX
+    ADD perimeterFloat,DX
+    ADD perimeter, AX 
+
+   ;area***********************************
+
     MOV AX, baseMayorTrapecio
-    ADD AX, baseMenorTrapecio
+    ADD AX,baseMenorTrapecio
+    MOV baseMayorTrapecio,AX
+        
+
+    ;Se suman las dos bases    
+    MOV AX,baseMenorTrapecioFloat
+    MOV DX,baseMayorTrapecioFloat
+    ADD AX,DX
+    XOR DX,DX
+    MOV BX,10000 ; PARA VER SI HAY PARTE ENTERA
+    DIV BX
+    ADD baseMayorTrapecio, AX ; Parte entera se suma 
+    MOV baseMayorTrapecioFloat,DX
     
-    ; Multiplicamos por ALTURA
-    MUL alturaTrapecio  ; DX:AX = (BASE MAYOR + BASE MENOR) * ALTURA
-    
-    ; Dividimos por 2
+
+
+
+    ;div/2////////////////
+    ;Se divide la base total cálculada anteriormente
+    MOV AX, baseMayorTrapecio
+    XOR DX,DX
     MOV BX, 2
-    DIV BX  ; AX = ((BASE MAYOR + BASE MENOR) * ALTURA) / 2, DX = remainder
+    DIV BX
+    MOV baseMayorTrapecio, AX ; NUEVA BASE 
+    MOV AX,DX ;residuo a AX
+    MOV CX,5000
+    MUL CX
+    MOV DX,baseMayorTrapecioFloat ; SE PONE  PArTE FLOTANTE EN DX
+    MOV baseMayorTrapecioFloat,AX ; nueva parte flotante
+    MOV AX,DX 
+    MOV CX,100
+    MUL CX
+    MOV CX,2 
+    XOR DX,DX
+    DIV CX 
+    ADD baseMayorTrapecioFloat, AX
 
-    ; Guardamos el resultado
+
+
+    ;Int*int
+    MOV AX, alturaTrapecio
+    MUL baseMayorTrapecio
     MOV WORD PTR [area], AX
-    MOV WORD PTR [area+2], DX  ; Guardamos el residuo en la parte alta por si acaso
+    MOV WORD PTR [area+2], DX
 
+    ;////////////// intLargo*FloatAncho
+    ;*****************************************
+    ;Se separa flotante
+    MOV AX,baseMayorTrapecioFloat
+    MOV BX,100
+    XOR DX,DX
+    DIV BX
+    MOV floatMenosSig,DX
+    MOV floatMasSIg,AX
+    
+    ;Se separa entero
+    MOV AX, alturaTrapecio
+    XOR DX,DX
+    DIV BX
+    MOV intMenosSig, DX
+    MOV intMasSIg, AX
+    
+    ;Int mas significativo * float mas sig
+    MOV BX, floatMasSIg
+    XOR DX,DX
+    MUL BX
+    ADD WORD PTR [area], AX ; Parte entera se suma 
+
+
+
+    ;menos int sig por mas sig float 
+    MOV AX,floatMasSIg
+    MUL intMenosSig
+    MOV BX,100 ; para separar parte entera y decimal
+    XOR DX,DX
+    DIV BX
+    ADD WORD PTR [area], AX ; Parte entera se suma 
+    MOV AX,DX
+    MOV CX,100
+    MUL CX
+    ADD areaFloat,AX ;parte decimal se suma
+
+    ;menos f sig por mas sig int
+    MOV AX,intMasSIg
+    MUL floatMenosSig
+    MOV BX,100 ; para separar parte entera y decimal
+    XOR DX,DX
+    DIV BX
+    ADD WORD PTR [area], AX ; Parte entera se suma 
+
+    MOV AX,DX
+    MOV CX,100
+    MUL CX
+    ADD AX,areaFloat
+    XOR DX,DX
+    MOV BX,10000 ; PARA VER SI HAY PARTE ENTERA
+    DIV BX
+    ADD WORD PTR [area], AX ; Parte entera se suma 
+    MOV areaFloat,DX
+
+
+    ;Menos sig int y f
+    ;Int menos significativo * float menos sig
+    MOV BX,floatMenosSIg
+    MOV AX,intMenosSig
+    XOR DX,DX
+    MUL BX
+
+    ADD AX,areaFloat
+    XOR DX,DX
+    MOV BX,10000 ; PARA VER SI HAY PARTE ENTERA
+    DIV BX
+    ADD WORD PTR [area], AX ; Parte entera se suma 
+    MOV areaFloat,DX
+
+    ;////////////// intAncho*FloatLargo
+    ;*****************************************
+    MOV AX,baseMayorTrapecio
+    MOV BX,alturaTrapecioFloat
+    MUL BX
+    MOV BX,100 ; para separar parte entera y decimal
+    DIV BX
+    MOV BX,AX ; int a bx
+    MOV AX,DX ;Parte decimal a ax
+    MOV CX,100  ;
+    MUL CX
+    ADD WORD PTR [area], BX ; Parte entera se suma 
+    ADC WORD PTR [area+2], 0    ; Suma el acarreo a los segundos 16 bits
+
+
+    MOV DX,areaFloat
+    ADD AX,DX
+    XOR DX,DX
+    MOV BX,10000 ; PARA VER SI HAY PARTE ENTERA
+    DIV BX
+    ADD WORD PTR [area], AX ; Parte entera se suma 
+    MOV areaFloat,DX
+
+
+    ; Calculando dec*dec
+    MOV AX,baseMayorTrapecioFloat
+    MOV CX,100 ;Para evitar acarreo
+    XOR DX,DX
+    DIV CX
+    MOV x,DX ; Para manejar acarreo
+    MOV BX,alturaTrapecioFloat
+    MUL BX
+    MOV DX,areaFloat
+    ADD AX,DX
+    XOR DX,DX
+    MOV BX,10000 ; PARA VER SI HAY PARTE ENTERA
+    DIV BX
+    ADD WORD PTR [area], AX ; Parte entera se suma 
+    MOV areaFloat,DX
+
+    ;Para manejar acarreo
+    MOV AX,X
+    MOV BX, alturaTrapecioFloat
+    MUL BX
+    MOV CX, 100
+    XOR DX,DX
+    DIV CX ; YA QUE ERA 0.00X
+    ADD AX, areaFloat
+    MOV BX,10000 ; PARA VER SI HAY PARTE ENTERA
+    XOR DX,DX
+    DIV BX
+    ADD WORD PTR [area], AX ; Parte entera se suma 
+    MOV AX,DX
+    MOV CX,100
+    XOR DX,DX
+    DIV CX
+    MOV areaFloat,AX
     JMP DISPLAY_RESULTS
 
 CALC_PARALELOGRAMO:
@@ -1469,51 +1806,133 @@ CALC_PARALELOGRAMO:
     MOV AH, 09H
     INT 21H
     CALL READ_NUMBER_NEW
-    MOV alturaParalelogramo, AX
+    MOV largoFloat,DX
+    MOV AX,intValue
+    MOV largo,AX
 
     LEA DX, promptLadoParalelogramo
     MOV AH, 09H
     INT 21H
     CALL READ_NUMBER_NEW
+    MOV ladoParalelogramoFloat,DX
+    MOV AX, intValue
     MOV ladoParalelogramo, AX
 
     LEA DX, promptBaseParalelogramo
     MOV AH, 09H
     INT 21H
     CALL READ_NUMBER_NEW
-    MOV baseParalelogramo, AX
+    MOV anchoFloat,DX
+    MOV AX,intValue
+    MOV ancho, AX
 
-    CMP alturaParalelogramo, 0
+    
+    CMP largo, 0
     JLE INVALID_INPUT_PARA
-    CMP alturaParalelogramo, 9999
+    CMP largo, 9999
     JG INVALID_INPUT_PARA
     CMP ladoParalelogramo, 0
     JLE INVALID_INPUT_PARA
     CMP ladoParalelogramo, 9999
     JG INVALID_INPUT_PARA
-    CMP baseParalelogramo, 0
+    CMP ancho, 0
     JLE INVALID_INPUT_PARA
-    CMP baseParalelogramo, 9999
+    CMP ancho, 9999
     JG INVALID_INPUT_PARA
+
     JMP CALC_PARA_AREA
 
 INVALID_INPUT_PARA:
     JMP INVALID_OPTION
 
 CALC_PARA_AREA:
-    ; Cálculo del perímetro: (2*LADO)+(2*BASE)
+    ;area*****************************
+    ;Se cálcula igual que el rectángulo
+
+    ;Int*int
+    MOV AX, largo
+    XOR DX,DX
+    MUL ancho
+    MOV WORD PTR [area], AX
+    MOV WORD PTR [area+2], DX
+
+    ;////////////// intLargo*FloatAncho
+    ;*****************************************
+    MOV AX,largo
+    MOV BX,anchoFloat
+    MUL BX
+    MOV BX,100 ; para separar parte entera y decimal
+    DIV BX
+    MOV BX,AX ; int a bx
+    MOV AX,DX ;Parte decimal a ax
+    MOV CX,100  ;
+    MUL CX
+    ADD WORD PTR [area], BX ; Parte entera se suma 
+    ADD areaFloat,AX ;parte decimal se suma
+
+
+;////////////// intAncho*FloatLargo
+    ;*****************************************
+    MOV AX,ancho
+    MOV BX,largoFloat
+    MUL BX
+    MOV BX,100 ; para separar parte entera y decimal
+    DIV BX
+    ADD WORD PTR [area], AX ; Parte entera se suma 
+    ADC WORD PTR [area+2], 0    ; Suma el acarreo 
+
+    MOV AX,DX ;Parte decimal a ax
+    MOV CX,100  ;
+    MUL CX
+
+    MOV DX,areaFloat
+    ADD AX,DX
+    XOR DX,DX
+    MOV BX,10000 ; PARA VER SI HAY PARTE ENTERA
+    DIV BX
+    ADD WORD PTR [area], AX ; Parte entera se suma 
+    MOV areaFloat,DX
+
+
+    ; Calculando dec*dec////////////
+    MOV AX,anchoFloat
+    MUL largoFloat
+    ADD AX,areaFloat
+    XOR DX,DX
+    MOV BX,10000 ; PARA VER SI HAY PARTE ENTERA
+    DIV BX
+    ADD WORD PTR [area], AX ; Parte entera se suma 
+    MOV AX,DX
+    MOV CX,100
+    XOR DX,DX
+    DIV CX
+    MOV areaFloat,AX
+    
+    
+    ;perimetro************************************
+
+    ;parte entera/////////////////////////
     MOV AX, ladoParalelogramo
     ADD AX, AX
-    MOV BX, baseParalelogramo
+    MOV BX, ancho
     ADD BX, BX
     ADD AX, BX
     MOV perimeter, AX
 
-    ; Cálculo del área: BASE * ALTURA
-    MOV AX, baseParalelogramo
-    MUL alturaParalelogramo
-    MOV WORD PTR [area], AX
-    MOV WORD PTR [area+2], DX
+    ;decimales
+
+
+    MOV AX ,ladoParalelogramoFloat
+    ADD AX, AX
+    MOV BX,AX
+    MOV AX, anchoFloat
+    ADD AX,AX 
+    ADD AX,BX ;se suman largos y anchos
+    XOR DX,DX
+    MOV BX,100 
+    DIV BX ;separar int y float
+    ADD perimeterFloat,DX
+    ADD perimeter, AX
 
     JMP DISPLAY_RESULTS
 
@@ -1525,8 +1944,8 @@ DISPLAY_RESULTS:
     CALL PRINTOUT   ; Mostrar "El area es: "
 
     MOV si, offset num_string+13
-    MOV ax, [area]      ; 16-bits de la parte entera baja
-    MOV dx, [area+2]    ; 16-bits de la parte entera alta
+    MOV ax, WORD PTR [area]      ; 16-bits de la parte entera baja
+    MOV dx, WORD PTR [area+2]    ; 16-bits de la parte entera alta
     MOV bx, areaFloat   ; 16-bits del parte flotante
     CALL PARSE  ; La funcion de parseo, convierte el contenido de DX:AX.BX al string en SI de DERECHA a IZQUIERDA
 
@@ -1541,8 +1960,8 @@ DISPLAY_RESULTS:
     LEA dx, crlf
     CALL PRINTOUT   ; Cambio de linea
 
-    MOV [area], 0   ; Limpiar el resultado del area
-    MOV [area+2], 0
+    MOV WORD PTR [area], 0   ; Limpiar el resultado del area
+    MOV WORD PTR [area+2], 0
     MOV areaFloat, 0
     ; /////// Valor del perimetro ///////
     LEA dx, msgPerimeter
