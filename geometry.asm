@@ -111,7 +111,10 @@
     baseParalelogramoFloat DW 0
 
     intPI DW 3
-    floatPI DW 1400
+    floatPI DW 14
+
+    intwoPI DW 6
+    floatwoPI DW 28
 
     area DW 0, 0        ; Área se almacena en un doble palabra para manejar números grandes
     areaFloat DW 0
@@ -203,6 +206,9 @@ INVALID_OPTION:
     JMP SELECCIONAR_FIGURA ; Vuelve a pedir la selección de figura
 
 
+
+
+
 CALC_CIRC:
     LEA DX, promptSize1
     MOV AH, 09H
@@ -214,50 +220,280 @@ CALC_CIRC:
 
 
 
-    ;Calculo entero*entero/////////////////
-
+    ;area******************************
+    ;Int*int
     MOV AX, intValue
-    MOV BX, AX
-    MUL BX
+    MOV CX,intPI
+    MUL CX
     MOV WORD PTR [area], AX
     MOV WORD PTR [area+2], DX
-    ;//////////////////////////
- 
-    ;Calculo entero*dec /////////////
-    
-    MOV AX,intValue
+
+    ;//////////////  intpi*Floatrad
+    ;*****************************************
+    MOV AX,intPI
     MOV BX,floatValue
     MUL BX
-    MOV BX,50 ; para separar parte entera y decimal
+    MOV BX,100 ; para separar parte entera y decimal
     DIV BX
     MOV BX,AX ; int a bx
     MOV AX,DX ;Parte decimal a ax
-    MOV CX,200  ;
+    MOV CX,100  ;
     MUL CX
     ADD WORD PTR [area], BX ; Parte entera se suma 
-    
     ADD areaFloat,AX ;parte decimal se suma
-    ;/////////////////////////////////  
-
-    
 
 
-    ; Calculando dec*dec////////////
-    MOV AX,floatValue 
-    MUL AX
+;////////////// intRAD*FloATPI
+    ;*****************************************
+    MOV AX,intValue
+    MOV BX,floatPI
+    MUL BX
+    MOV BX,100 ; para separar parte entera y decimal
+    DIV BX
+    MOV BX,AX ; int a bx
+    MOV AX,DX ;Parte decimal a ax
+    MOV CX,100  ;
+    MUL CX
+    ADD WORD PTR [area], BX ; Parte entera se suma 
+
     MOV DX,areaFloat
     ADD AX,DX
     XOR DX,DX
-    MOV BX,10000 ; PARA VER SI HAY PARTE ENTERA y evitar acarreo
+    MOV BX,10000 ; PARA VER SI HAY PARTE ENTERA
     DIV BX
     ADD WORD PTR [area], AX ; Parte entera se suma 
-    MOV areaFloat,DX 
-    ;***************************************************
+    MOV areaFloat,DX
+
+
+    ; Calculando dec*dec////////////
+    MOV AX,floatPI
+    MUL floatValue
+    ADD AX,areaFloat
+    XOR DX,DX
+    MOV BX,10000 ; PARA VER SI HAY PARTE ENTERA
+    DIV BX
+    ADD WORD PTR [area], AX ; Parte entera se suma 
+    MOV AX,DX
+    MOV areaFloat,AX
+    MOV perimeterFloat,AX
+    MOV AX,area
+    MOV perimeter,AX
+
+    XOR DX,DX
+    MOV area,DX
+    MOV areaFloat,DX
+
+    
+    ;PI X R TERMINADA Y FUNCINALLLLLLLLLLL////////////***************************************
+
+
+    ;area******************************
+    ;Int*int
+    MOV AX, intValue
+    MOV CX,perimeter
+    MUL CX
+    ADD WORD PTR [area], AX
+    ADD WORD PTR [area+2], DX
+
+;////////////// intLargo*FloatAncho
+    ;*****************************************
+    ;Se separa flotante
+    MOV AX,perimeterFloat
+    MOV BX,100
+    XOR DX,DX
+    DIV BX
+    MOV floatMenosSig,DX
+    MOV floatMasSIg,AX
+    
+    ;Se separa entero
+    MOV AX, intValue
+    XOR DX,DX
+    DIV BX
+    MOV intMenosSig, DX
+    MOV intMasSIg, AX
+    
+    ;Int mas significativo * float mas sig
+    MOV BX, floatMasSIg
+    XOR DX,DX
+    MUL BX
+    ADD WORD PTR [area], AX ; Parte entera se suma 
+
+
+    ;menos int sig por mas sig float 
+    MOV AX,floatMasSIg
+    MUL intMenosSig
+    MOV BX,100 ; para separar parte entera y decimal
+    XOR DX,DX
+    DIV BX
+    ADD WORD PTR [area], AX ; Parte entera se suma 
+    MOV AX,DX
+    MOV CX,100
+    MUL CX
+    ADD areaFloat,AX ;parte decimal se suma
+
+    ;menos f sig por mas sig int
+    MOV AX,intMasSIg
+    MUL floatMenosSig
+    MOV BX,100 ; para separar parte entera y decimal
+    XOR DX,DX
+    DIV BX
+    ADD WORD PTR [area], AX ; Parte entera se suma 
+
+    MOV AX,DX
+    MOV CX,100
+    MUL CX
+    ADD AX,areaFloat
+    XOR DX,DX
+    MOV BX,10000 ; PARA VER SI HAY PARTE ENTERA
+    DIV BX
+    ADD WORD PTR [area], AX ; Parte entera se suma 
+    MOV areaFloat,DX
+
+
+    ;Menos sig int y f
+    ;Int menos significativo * float menos sig
+    MOV BX,floatMenosSIg
+    MOV AX,intMenosSig
+    XOR DX,DX
+    MUL BX
+
+    ADD AX,areaFloat
+    XOR DX,DX
+    MOV BX,10000 ; PARA VER SI HAY PARTE ENTERA
+    DIV BX
+    ADD WORD PTR [area], AX ; Parte entera se suma 
+    MOV areaFloat,DX
 
 
 
 
+       ;////////////// intLargo*FloatAncho
+    ;*****************************************
 
+    
+    ;////////////// intAncho*FloatLargo
+    ;*****************************************
+    MOV AX,floatValue
+    MOV BX,perimeter
+    MUL BX
+    MOV BX,100 ; para separar parte entera y decimal
+    DIV BX
+    ADD WORD PTR [area], AX ; Parte entera se suma 
+    MOV AX,DX ;Parte decimal a ax
+
+    ADD AX,areaFloat    
+    XOR DX,DX
+    MOV BX,10000 ; PARA VER SI HAY PARTE ENTERA
+    DIV BX
+    ADD WORD PTR [area], AX ; Parte entera se suma 
+    MOV areaFloat,DX
+
+    ; Calculando dec*dec////////////
+    ; Calculando dec*dec////////////
+    MOV AX,baseFloat
+    MOV CX,100 ;Para evitar acarreo
+    XOR DX,DX
+    DIV CX
+    MOV x,DX ; Para manejar acarreo
+    MOV BX,alturaFloat
+    MUL BX
+    MOV DX,areaFloat
+    ADD AX,DX
+    XOR DX,DX
+    MOV BX,10000 ; PARA VER SI HAY PARTE ENTERA
+    DIV BX
+    ADD WORD PTR [area], AX ; Parte entera se suma 
+    MOV areaFloat,DX
+
+    ;Para manejar acarreo
+    MOV AX,X
+    MOV BX, alturaFloat
+    MUL BX
+    MOV CX, 100
+    XOR DX,DX
+    DIV CX ; YA QUE ERA 0.00X
+    ADD AX, areaFloat
+    MOV BX,10000 ; PARA VER SI HAY PARTE ENTERA
+    XOR DX,DX
+    DIV BX
+    ADD WORD PTR [area], AX ; Parte entera se suma 
+    MOV AX,DX
+    MOV CX,100
+    XOR DX,DX
+    DIV CX
+    MOV areaFloat,AX
+    XOR DX,DX 
+    MOV WORD PTR [perimeter],DX
+    MOV WORD PTR [perimeter+2],DX
+
+
+
+    ;perimetro
+
+
+    ;Int*int
+    MOV AX, intValue
+    MOV CX,intwoPI
+    MUL CX
+    MOV WORD PTR [perimeter], AX
+    MOV WORD PTR [perimeter+2], DX
+
+    ;//////////////  intpi*Floatrad
+    ;*****************************************
+    MOV AX,intwoPI
+    MOV BX,floatValue
+    MUL BX
+    MOV BX,100 ; para separar parte entera y decimal
+    DIV BX
+    MOV BX,AX ; int a bx
+    MOV AX,DX ;Parte decimal a ax
+    MOV CX,100  ;
+    MUL CX
+    ADD WORD PTR [perimeter], BX ; Parte entera se suma 
+    ADD perimeterFloat,AX ;parte decimal se suma
+
+
+;////////////// intRAD*FloATPI
+    ;*****************************************
+    MOV AX,intValue
+    MOV BX,floatwoPI
+    MUL BX
+    MOV BX,100 ; para separar parte entera y decimal
+    DIV BX
+    MOV BX,AX ; int a bx
+    MOV AX,DX ;Parte decimal a ax
+    MOV CX,100  ;
+    MUL CX
+    ADD WORD PTR [perimeter], BX ; Parte entera se suma 
+
+    MOV DX,perimeterFloat
+    ADD AX,DX
+    XOR DX,DX
+    MOV BX,10000 ; PARA VER SI HAY PARTE ENTERA
+    DIV BX
+    ADD WORD PTR [perimeter], AX ; Parte entera se suma 
+    MOV perimeterFloat,DX
+
+
+    ; Calculando dec*dec////////////
+    MOV AX,floatwoPI
+    MUL floatValue
+    ADD AX,perimeterFloat
+    XOR DX,DX
+    MOV BX,10000 ; PARA VER SI HAY PARTE ENTERA
+    DIV BX
+    ADD WORD PTR [perimeter], AX ; Parte entera se suma 
+    MOV AX,DX
+    MOV CX,100
+    XOR DX,DX
+    DIV CX
+    MOV perimeterFloat,AX
+
+    ;PI X R TERMINADA Y FUNCINALLLLLLLLLLL////////////
+
+
+
+    JMP DISPLAY_RESULTS
 
 CALC_CUADRADO:
     LEA DX, promptSize1
@@ -269,11 +505,16 @@ CALC_CUADRADO:
     XOR DX,DX
 
     CMP intValue, 0
-    JLE INVALID_OPTION
+    JLE INVALID_INPUT_CUAD
     CMP intValue, 9999
-    JG INVALID_OPTION
-    ;area si hay dec *****************************
-    ;Calculo entero*entero/////////////////
+    JG INVALID_INPUT_CUAD
+
+    JMP CALC_CUAD_AREA
+
+INVALID_INPUT_CUAD:
+    JMP INVALID_OPTION
+
+CALC_CUAD_AREA:
 
     MOV AX, intValue
     MOV BX, AX
@@ -413,6 +654,7 @@ CALC_RECT_AREA:
     MOV AX,ancho
     MOV BX,largoFloat
     MUL BX
+    XOR DX,DX
     MOV BX,100 ; para separar parte entera y decimal
     DIV BX
     MOV BX,AX ; int a bx
