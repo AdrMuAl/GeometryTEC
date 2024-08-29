@@ -33,6 +33,7 @@
     promptApotema DB 0Dh, 0Ah, 'Por favor ingrese la medida de la apotema del pentagono: $'
     promptLadoHexagono DB 0Dh, 0Ah, 'Por favor ingrese la medida del lado del hexagono: $'
     promptApotemaHexagono DB 0Dh, 0Ah, 'Por favor ingrese la medida de la apotema del hexagono: $'
+    promptRadio DB 0Dh, 0Ah, 'Por favor ingrese el radio del circulo: $'
     promptAlturaTrapecio DB 0Dh, 0Ah, 'Por favor ingrese la altura del trapecio: $'
     promptBaseMayorTrapecio DB 0Dh, 0Ah, 'Por favor ingrese la base mayor del trapecio: $'
     promptBaseMenorTrapecio DB 0Dh, 0Ah, 'Por favor ingrese la base menor del trapecio: $'
@@ -160,6 +161,8 @@ SELECCIONAR_FIGURA:
     JE CALC_PENTAGONO_JUMP
     CMP AL, 6
     JE CALC_HEXAGONO_JUMP
+    CMP AL, 7
+    JE CALC_CIRC_JUMP
     CMP AL, 8
     JE CALC_TRAPECIO_JUMP
     CMP AL, 9
@@ -183,6 +186,9 @@ CALC_PENTAGONO_JUMP:
 
 CALC_HEXAGONO_JUMP:
     JMP CALC_HEXAGONO   ; Salta a la rutina para calcular hexágono
+    
+CALC_CIRC_JUMP:
+    JMP CALC_CIRC   ; Salta a la rutina para calcular circulo
 
 CALC_TRAPECIO_JUMP:
     JMP CALC_TRAPECIO   ; Salta a la rutina para calcular trapecio
